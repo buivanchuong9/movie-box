@@ -1,0 +1,16 @@
+# Secrets — never commit real API keys
+Config/Secrets.xcconfig
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
