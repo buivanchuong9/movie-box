@@ -16,7 +16,7 @@ struct LumenApp: App {
                 } else if let launchError {
                     EmptyStateView(
                         systemImage: "exclamationmark.triangle",
-                        title: "Lumen could not start",
+                        title: "Movie Box could not start",
                         message: launchError
                     )
                     .background(AppColors.background)
@@ -37,16 +37,16 @@ struct LumenApp: App {
 
     private var launch: some View {
         VStack(spacing: AppSpacing.md) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(AppColors.accent)
-                .frame(width: 12, height: 36)
-            Text("LUMEN")
+            Image("AppLogo")
+                .resizable()
+                .frame(width: 88, height: 88)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            Text("Movie Box")
                 .font(.system(.largeTitle, design: .serif).weight(.semibold))
-                .tracking(4)
                 .foregroundStyle(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.background)
-        .accessibilityLabel("Lumen")
+        .accessibilityLabel("Movie Box")
     }
 }

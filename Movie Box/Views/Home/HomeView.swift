@@ -22,16 +22,16 @@ struct HomeView: View {
     private var header: some View {
         HStack(spacing: AppSpacing.sm) {
             HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(AppColors.accent)
-                    .frame(width: 8, height: 18)
-                Text("LUMEN")
+                Image("AppLogo")
+                    .resizable()
+                    .frame(width: 28, height: 28)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text("Movie Box")
                     .font(AppTypography.wordmark)
-                    .tracking(2.4)
                     .foregroundStyle(AppColors.textPrimary)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Lumen")
+            .accessibilityLabel("Movie Box")
             .accessibilityAddTraits(.isHeader)
 
             Spacer()

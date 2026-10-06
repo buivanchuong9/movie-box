@@ -52,7 +52,7 @@ struct SettingsView: View {
             legalRow("Terms", url: LegalConfiguration.termsURL, document: .terms)
             NavigationLink(value: AppRoute.legal(.about)) { Text("About") }
                 .listRowBackground(AppColors.surface)
-            Button("Rate Lumen") { rateApp() }
+            Button("Rate Movie Box") { rateApp() }
                 .listRowBackground(AppColors.surface)
 
             NavigationLink(value: AppRoute.premium) { Text("Lumen Plus") }

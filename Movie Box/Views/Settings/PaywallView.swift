@@ -1,19 +1,9 @@
 import SwiftUI
 
-enum LaunchOffer {
-    private static let key = "lumen.launchOffer.dismissed"
-
-    static var isDismissed: Bool {
-        get { UserDefaults.standard.bool(forKey: key) }
-        set { UserDefaults.standard.set(newValue, forKey: key) }
-    }
-}
-
 struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.openURL) private var openURL
-    var allowsDismiss = false
-    var onDismiss: () -> Void = {}
+    var embedded = false
     @State private var model: PaywallViewModel?
 
     var body: some View {
@@ -50,7 +40,7 @@ struct PaywallView: View {
         .background(AppColors.background)
         .navigationTitle("Lumen Plus")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(allowsDismiss ? .hidden : .automatic, for: .navigationBar)
+        .toolbar(embedded ? .automatic : .hidden, for: .navigationBar)
         .task {
             if model == nil {
                 model = PaywallViewModel(store: env.store, entitlements: env.entitlements)
@@ -82,23 +72,17 @@ struct PaywallView: View {
     private var topBar: some View {
         HStack {
             HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(AppColors.accent)
-                    .frame(width: 8, height: 18)
-                Text("LUMEN")
+                Image("AppLogo")
+                    .resizable()
+                    .frame(width: 28, height: 28)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text("Movie Box")
                     .font(AppTypography.wordmark)
-                    .tracking(2.4)
                     .foregroundStyle(AppColors.textPrimary)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Lumen")
+            .accessibilityLabel("Movie Box")
             Spacer()
-            if allowsDismiss {
-                Button("Not now") { onDismiss() }
-                    .font(AppTypography.captionBold)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .frame(minHeight: AppSpacing.touch)
-            }
         }
         .padding(.horizontal, AppSpacing.page)
         .padding(.top, AppSpacing.sm)
@@ -297,15 +281,9 @@ struct PaywallView: View {
 
     @ViewBuilder
     private func purchaseButton(_ model: PaywallViewModel) -> some View {
-        let finished = model.phase == .success || model.phase == .restored || model.phase == .alreadyPurchased
         let busy = model.phase == .purchasing || model.phase == .loading || model.phase == .restoring
         if model.phase == .loading && model.plans.isEmpty {
             EmptyView()
-        } else if finished && allowsDismiss {
-            Button(action: onDismiss) {
-                PrimaryButtonLabel(title: "Continue", systemImage: "checkmark")
-            }
-            .buttonStyle(PressScaleStyle())
         } else if model.plans.isEmpty {
             Button {
                 Task { await model.load() }
@@ -383,6 +361,6 @@ struct PaywallView: View {
 
 struct PremiumView: View {
     var body: some View {
-        PaywallView()
+        PaywallView(embedded: true)
     }
 }

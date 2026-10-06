@@ -3,17 +3,13 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var showPremium = false
-    @State private var offerDismissed = LaunchOffer.isDismissed
 
     var body: some View {
         Group {
             if !env.library.preferences.hasCompletedOnboarding {
                 OnboardingView()
-            } else if !env.entitlements.isPremium && !offerDismissed {
-                PaywallView(allowsDismiss: true) {
-                    LaunchOffer.isDismissed = true
-                    offerDismissed = true
-                }
+            } else if !env.entitlements.isPremium {
+                PaywallView()
             } else {
                 RootTabView()
             }
