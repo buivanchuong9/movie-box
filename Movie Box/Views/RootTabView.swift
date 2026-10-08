@@ -43,32 +43,89 @@ struct RootView: View {
 
 struct RootTabView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var usesSidebar: Bool {
+        horizontalSizeClass == .regular && verticalSizeClass == .regular
+    }
 
     var body: some View {
-        ZStack {
-            tab(.home) { HomeRoot() }
-            tab(.discover) { DiscoverRoot() }
-            tab(.search) { SearchRoot() }
-            tab(.library) { LibraryRoot() }
-        }
-        .background(AppColors.background)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            CinematicTabBar()
-        }
-        .onChange(of: env.tabs.selection) { _, tab in
-            env.tabs.loaded.insert(tab)
+        if usesSidebar {
+            NavigationSplitView {
+                List(selection: sidebarSelection) {
+                    ForEach(AppTab.allCases) { tab in
+                        Label(tab.title, systemImage: tab.symbol(selected: env.tabs.selection == tab))
+                            .tag(tab)
+                    }
+                }
+                .navigationTitle("Movie Box")
+                .listStyle(.sidebar)
+            } detail: {
+                keptTabs
+            }
+            .navigationSplitViewStyle(.balanced)
+            .tint(AppColors.accent)
+        } else {
+            TabView(selection: selection) {
+                HomeRoot()
+                    .tabItem { Label(AppTab.home.title, systemImage: "house") }
+                    .tag(AppTab.home)
+                DiscoverRoot()
+                    .tabItem { Label(AppTab.discover.title, systemImage: "safari") }
+                    .tag(AppTab.discover)
+                SearchRoot()
+                    .tabItem { Label(AppTab.search.title, systemImage: "magnifyingglass") }
+                    .tag(AppTab.search)
+                LibraryRoot()
+                    .tabItem { Label(AppTab.library.title, systemImage: "bookmark") }
+                    .tag(AppTab.library)
+            }
+            .tint(AppColors.accent)
+            .toolbarBackground(AppColors.background, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
         }
     }
 
-    @ViewBuilder
-    private func tab<Content: View>(_ tab: AppTab, @ViewBuilder content: () -> Content) -> some View {
-        if env.tabs.loaded.contains(tab) {
-            content()
-                .opacity(env.tabs.selection == tab ? 1 : 0)
-                .allowsHitTesting(env.tabs.selection == tab)
-                .accessibilityHidden(env.tabs.selection != tab)
-                .zIndex(env.tabs.selection == tab ? 1 : 0)
+    private var keptTabs: some View {
+        ZStack {
+            kept(HomeRoot(), tab: .home)
+            kept(DiscoverRoot(), tab: .discover)
+            kept(SearchRoot(), tab: .search)
+            kept(LibraryRoot(), tab: .library)
         }
+        .background(AppColors.background)
+    }
+
+    private func kept<Content: View>(_ content: Content, tab: AppTab) -> some View {
+        let selected = env.tabs.selection == tab
+        return content
+            .opacity(selected ? 1 : 0)
+            .allowsHitTesting(selected)
+            .accessibilityHidden(!selected)
+            .zIndex(selected ? 1 : 0)
+    }
+
+    private var sidebarSelection: Binding<AppTab?> {
+        Binding(
+            get: { env.tabs.selection },
+            set: { tab in
+                guard let tab, env.tabs.selection != tab else { return }
+                Haptics.selection()
+                env.tabs.select(tab)
+            }
+        )
+    }
+
+    private var selection: Binding<AppTab> {
+        Binding(
+            get: { env.tabs.selection },
+            set: { tab in
+                guard env.tabs.selection != tab else { return }
+                Haptics.selection()
+                env.tabs.select(tab)
+            }
+        )
     }
 }
 

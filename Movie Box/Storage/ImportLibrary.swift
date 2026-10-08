@@ -1,5 +1,5 @@
+import CryptoKit
 import Foundation
-import UIKit
 
 /// Movies the user added from the photo library or from image files. No network calls.
 @MainActor
@@ -11,28 +11,39 @@ final class ImportLibrary {
     private let catalogURL: URL
 
     init() {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )) ?? URL(fileURLWithPath: NSTemporaryDirectory())
         directory = base.appendingPathComponent("ImportedMovies", isDirectory: true)
         catalogURL = directory.appendingPathComponent("catalog.json")
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         load()
     }
 
-    func add(title: String, imageData: Data) {
-        guard let image = UIImage(data: imageData), let jpeg = image.jpegData(compressionQuality: 0.88) else { return }
+    @discardableResult
+    func add(title: String, imageData: Data) -> Bool {
+        guard let jpeg = PosterEncoding.jpeg(from: imageData) else { return false }
+        let digest = SHA256.hash(data: jpeg).map { String(format: "%02x", $0) }.joined()
+        if records.contains(where: { $0.digest == digest }) { return false }
         let id = (records.map(\.id).max() ?? 0) + 1
         let fileName = "\(id).jpg"
         let url = directory.appendingPathComponent(fileName)
         do {
             try jpeg.write(to: url, options: .atomic)
         } catch {
-            return
+            return false
         }
         let cleaned = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        records.insert(Record(id: id, title: cleaned.isEmpty ? "Movie \(id)" : cleaned, fileName: fileName, createdAt: .now), at: 0)
+        records.insert(
+            Record(id: id, title: cleaned.isEmpty ? "Movie \(id)" : cleaned, fileName: fileName, createdAt: .now, digest: digest),
+            at: 0
+        )
         persist()
         rebuild()
+        return true
     }
 
     func summary(id: Int) -> MediaSummary? {
@@ -44,6 +55,7 @@ final class ImportLibrary {
         var title: String
         var fileName: String
         var createdAt: Date
+        var digest: String?
     }
 
     private func load() {

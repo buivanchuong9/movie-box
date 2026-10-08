@@ -52,15 +52,15 @@ struct MovieDetailView: View {
                         OfflineView()
                     }
                     backdrop(movie)
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        actionRow(movie)
-                        WorthWatchingPanel(average: movie.voteAverage, voteCount: movie.voteCount)
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
                         section("Overview") {
                             Text(movie.overview.isEmpty ? "No overview has been published." : movie.overview)
                                 .font(AppTypography.body)
                                 .foregroundStyle(AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        LibraryActions(media: movie.summary)
+                        WorthWatchingPanel(average: movie.voteAverage, voteCount: movie.voteCount)
                         section("Rating") {
                             RatingView(average: movie.voteAverage, voteCount: movie.voteCount)
                         }
@@ -81,6 +81,7 @@ struct MovieDetailView: View {
                     }
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, AppSpacing.xxl)
+                    .lumenColumn(maxWidth: 840)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -133,27 +134,6 @@ struct MovieDetailView: View {
         }
     }
 
-    private func actionRow(_ movie: MovieDetail) -> some View {
-        let summary = movie.summary
-        return HStack(spacing: AppSpacing.sm) {
-            if let url = model?.trailer?.youtubeURL {
-                Button {
-                    openURL(url)
-                } label: {
-                    PrimaryButtonLabel(title: "Watch Trailer", systemImage: "play.fill")
-                }
-                .buttonStyle(PressScaleStyle())
-                .frame(maxWidth: .infinity)
-                .accessibilityHint("Opens the official trailer")
-            }
-
-            WatchlistButton(isSaved: env.library.watchlistKeys.contains(summary.libraryKey), prominent: true) {
-                env.library.toggleWatchlist(summary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
     private func topBar(_ movie: MovieDetail) -> some View {
         HStack {
             backButton
@@ -168,9 +148,6 @@ struct MovieDetailView: View {
                     .background(.ultraThinMaterial, in: Circle())
             }
             .accessibilityLabel("Share \(movie.title)")
-            FavoriteButton(isFavorite: env.library.favoriteKeys.contains(movie.summary.libraryKey)) {
-                env.library.toggleFavorite(movie.summary)
-            }
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.top, 4)

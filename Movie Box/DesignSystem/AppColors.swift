@@ -44,10 +44,16 @@ enum AppColors {
         light: UIColor(red: 0.180, green: 0.450, blue: 0.300, alpha: 1),
         dark: UIColor(red: 0.455, green: 0.730, blue: 0.520, alpha: 1)
     )
+    static var destructive: Color { negative }
+
     static let negative = dynamic(
         light: UIColor(red: 0.650, green: 0.220, blue: 0.180, alpha: 1),
         dark: UIColor(red: 0.820, green: 0.380, blue: 0.340, alpha: 1)
     )
+    static var backgroundPrimary: Color { background }
+    static var backgroundSecondary: Color { surface }
+    static var surfaceElevated: Color { elevated }
+
     static let separator = dynamic(
         light: UIColor.black.withAlphaComponent(0.08),
         dark: UIColor.white.withAlphaComponent(0.08)

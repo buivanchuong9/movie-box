@@ -5,34 +5,30 @@ struct LibraryView: View {
     @State private var segment: LibrarySegment = .watchlist
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("My List")
-                .font(AppTypography.screenTitle)
-                .foregroundStyle(AppColors.textPrimary)
-                .padding(.horizontal, AppSpacing.page)
-                .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text("My List")
+                    .font(AppTypography.screenTitle)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Watchlist, favorites, and the movies you've watched.")
+                    .font(AppTypography.callout)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            .padding(.horizontal, AppSpacing.page)
 
             if !env.network.isOnline {
                 OfflineView()
             }
 
-            HStack(spacing: AppSpacing.xs) {
+            Picker("Collection", selection: $segment) {
                 ForEach(LibrarySegment.allCases) { item in
-                    Button {
-                        withAnimation(AppAnimation.quick) { segment = item }
-                    } label: {
-                        Text(item.title)
-                            .font(AppTypography.captionBold)
-                            .foregroundStyle(segment == item ? AppColors.onAccent : AppColors.textPrimary)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: AppSpacing.touch)
-                            .background(segment == item ? AppColors.accentFill : AppColors.elevated, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(segment == item ? .isSelected : [])
+                    Text(item.title).tag(item)
                 }
             }
+            .pickerStyle(.segmented)
             .padding(.horizontal, AppSpacing.page)
+            .accessibilityLabel("Collection")
 
             let items = currentItems
             if items.isEmpty {
@@ -79,9 +75,9 @@ struct LibraryView: View {
 
     private var emptyMessage: String {
         switch segment {
-        case .watchlist: "Save movies and shows you want to come back to."
-        case .favorites: "Tap the heart on a title to keep it close."
-        case .watched: "Mark something watched and it will live here."
+        case .watchlist: "Save titles you want to come back to."
+        case .favorites: "Heart a movie to keep it in this collection."
+        case .watched: "Mark a title watched and it stays here."
         }
     }
 }

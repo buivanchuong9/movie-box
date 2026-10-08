@@ -34,7 +34,7 @@ actor ImageStore {
 
         if url.isFileURL {
             let raw = try Data(contentsOf: url)
-            let prepared = Self.downsample(raw, maxPixel: maxPixel) ?? raw
+            let prepared = PosterEncoding.jpeg(from: raw, maxPixel: maxPixel) ?? raw
             remember(prepared, for: key)
             try? prepared.write(to: file, options: .atomic)
             return prepared
@@ -45,7 +45,7 @@ actor ImageStore {
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw AppError.server
         }
-        let prepared = Self.downsample(raw, maxPixel: maxPixel) ?? raw
+        let prepared = PosterEncoding.jpeg(from: raw, maxPixel: maxPixel) ?? raw
         remember(prepared, for: key)
         try? prepared.write(to: file, options: .atomic)
         return prepared
@@ -63,7 +63,25 @@ actor ImageStore {
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
-    private static func downsample(_ data: Data, maxPixel: CGFloat) -> Data? {
+}
+
+enum PosterEncoding {
+    nonisolated static func prepared(_ data: Data) async -> Data? {
+        await Task.detached(priority: .userInitiated) {
+            jpeg(from: data)
+        }.value
+    }
+
+    nonisolated static func preparedFile(_ url: URL) async -> Data? {
+        await Task.detached(priority: .userInitiated) {
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return jpeg(from: data)
+        }.value
+    }
+
+    nonisolated static func jpeg(from data: Data, maxPixel: CGFloat = 1600) -> Data? {
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else { return nil }
         let options = [

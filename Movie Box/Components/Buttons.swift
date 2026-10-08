@@ -55,11 +55,11 @@ struct SecondaryButtonLabel: View {
         .frame(maxWidth: .infinity)
         .frame(minHeight: AppSpacing.touch)
         .padding(.horizontal, AppSpacing.md)
-        .background(AppColors.elevated)
+        .background(Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .strokeBorder(AppColors.separator, lineWidth: 1)
+                .strokeBorder(AppColors.textTertiary.opacity(0.7), lineWidth: 1)
         }
         .accessibilityLabel(title)
     }
@@ -133,6 +133,53 @@ struct WatchlistButton: View {
         }
         .buttonStyle(PressScaleStyle())
         .accessibilityLabel(isSaved ? "Remove from watchlist" : "Add to watchlist")
+    }
+}
+
+struct LibraryActions: View {
+    @Environment(AppEnvironment.self) private var env
+    let media: MediaSummary
+
+    var body: some View {
+        let key = media.libraryKey
+        let listed = env.library.watchlistKeys.contains(key)
+        let favorite = env.library.favoriteKeys.contains(key)
+        let watched = env.library.watchedKeys.contains(key)
+        HStack(spacing: AppSpacing.xs) {
+            action(title: listed ? "In Watchlist" : "Watchlist", systemImage: listed ? "bookmark.fill" : "bookmark", selected: listed) {
+                env.library.toggleWatchlist(media)
+            }
+            action(title: favorite ? "Favorited" : "Favorite", systemImage: favorite ? "heart.fill" : "heart", selected: favorite) {
+                env.library.toggleFavorite(media)
+            }
+            action(title: "Watched", systemImage: watched ? "checkmark.circle.fill" : "checkmark.circle", selected: watched) {
+                env.library.toggleWatched(media)
+            }
+        }
+    }
+
+    private func action(title: String, systemImage: String, selected: Bool, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            VStack(spacing: AppSpacing.xxs) {
+                Image(systemName: systemImage)
+                    .font(.body.weight(.semibold))
+                Text(title)
+                    .font(AppTypography.captionBold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(selected ? AppColors.accent : AppColors.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder(selected ? AppColors.accent.opacity(0.7) : AppColors.separator, lineWidth: 1)
+            }
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel(title)
+        .accessibilityValue(selected ? "On" : "Off")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

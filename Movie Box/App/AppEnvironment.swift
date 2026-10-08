@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 import SwiftData
 
 @MainActor
@@ -46,7 +47,8 @@ final class AppEnvironment {
             UserPreferences.self,
             CachedPayload.self
         ])
-        container = try ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: preview))
+        let configuration = try Self.storeConfiguration(inMemory: preview)
+        container = try ModelContainer(for: schema, configurations: configuration)
         library = LibraryRepository(context: container.mainContext)
         client = APIClient()
         client.contentLanguage = library.preferences.contentLanguage
@@ -81,11 +83,18 @@ final class AppEnvironment {
         }
     }
 
-    func importImages(_ images: [(title: String, data: Data)]) async {
+    @discardableResult
+    func importImages(_ images: [(title: String, data: Data)]) async -> Int {
+        var added = 0
         for image in images {
-            imports.add(title: image.title, imageData: image.data)
+            if imports.add(title: image.title, imageData: image.data) {
+                added += 1
+            }
         }
-        await refreshImportedContent()
+        if added > 0 {
+            await refreshImportedContent()
+        }
+        return added
     }
 
     private func refreshImportedContent() async {
@@ -97,5 +106,20 @@ final class AppEnvironment {
 
     func applyLanguage() {
         client.contentLanguage = library.preferences.contentLanguage
+    }
+
+    private static func storeConfiguration(inMemory: Bool) throws -> ModelConfiguration {
+        if inMemory {
+            return ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        }
+        let support = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        let storeURL = support.appendingPathComponent("default.store")
+        return ModelConfiguration(url: storeURL, cloudKitDatabase: .none)
     }
 }

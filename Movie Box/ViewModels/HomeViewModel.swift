@@ -80,7 +80,7 @@ final class HomeViewModel {
         let failures = [results.0, results.1, results.2, results.3, results.4, results.5].compactMap(\.error)
         if !hasContent, let failure = failures.first {
             needsAPIKey = (failure as? AppError) == .missingAPIKey
-            errorMessage = failure.localizedDescription
+            errorMessage = AppError.userMessage(for: failure)
         } else if !failures.isEmpty && !hasContent {
             errorMessage = AppError.offline.localizedDescription
         }

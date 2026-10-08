@@ -37,25 +37,20 @@ struct TVDetailView: View {
                     }
                     header(show)
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        HStack(spacing: AppSpacing.sm) {
-                            if let url = model.trailer?.youtubeURL {
-                                Button {
-                                    openURL(url)
-                                } label: {
-                                    PrimaryButtonLabel(title: "Watch Trailer", systemImage: "play.fill")
-                                }
-                                .buttonStyle(PressScaleStyle())
-                                .frame(maxWidth: .infinity)
-                            }
-                            WatchlistButton(isSaved: env.library.watchlistKeys.contains(show.summary.libraryKey), prominent: true) {
-                                env.library.toggleWatchlist(show.summary)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        WorthWatchingPanel(average: show.voteAverage, voteCount: show.voteCount)
                         Text(show.overview.isEmpty ? "No overview has been published." : show.overview)
                             .font(AppTypography.body)
                             .foregroundStyle(AppColors.textSecondary)
+                        LibraryActions(media: show.summary)
+                        if let url = model.trailer?.youtubeURL {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                SecondaryButtonLabel(title: "Watch Trailer", systemImage: "play.fill")
+                            }
+                            .buttonStyle(PressScaleStyle())
+                            .accessibilityHint("Opens the official trailer")
+                        }
+                        WorthWatchingPanel(average: show.voteAverage, voteCount: show.voteCount)
                         if let credits = model.credits, !credits.cast.isEmpty {
                             Text("Cast")
                                 .font(AppTypography.section)
@@ -78,6 +73,7 @@ struct TVDetailView: View {
                     }
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, AppSpacing.xxl)
+                    .lumenColumn(maxWidth: 840)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

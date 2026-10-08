@@ -49,9 +49,6 @@
             ReferencedContainer = "container:Movie Box.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "Movie Box/Resources/LumenPlus.storekit">
-      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

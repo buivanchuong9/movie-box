@@ -178,7 +178,7 @@ final class PaywallViewModel {
             case .annual:
                 billingNote = "Billed yearly"
             case .lifetime:
-                billingNote = "One time"
+                billingNote = "One-time purchase"
             }
             let savingsText = kind == .annual ? savings.map { "Save \($0)%" } : nil
             return PaywallPlan(

@@ -19,6 +19,7 @@ struct MovieImporter: ViewModifier {
     @State private var showPhotos = false
     @State private var showFiles = false
     @State private var photos: [PhotosPickerItem] = []
+    @State private var notice: String?
 
     func body(content: Content) -> some View {
         content
@@ -39,6 +40,18 @@ struct MovieImporter: ViewModifier {
             .fileImporter(isPresented: $showFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
                 Task { await importFiles(result) }
             }
+            .alert("Import", isPresented: noticePresented) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(notice ?? "")
+            }
+    }
+
+    private var noticePresented: Binding<Bool> {
+        Binding(
+            get: { notice != nil },
+            set: { if !$0 { notice = nil } }
+        )
     }
 }
 
@@ -53,22 +66,31 @@ private extension MovieImporter {
         var next = env.imports.movies.count + 1
         var images: [(title: String, data: Data)] = []
         for item in items {
-            guard let photo = try? await item.loadTransferable(type: PickedPhoto.self) else { continue }
-            images.append((title: "Movie \(next)", data: photo.data))
+            guard let photo = try? await item.loadTransferable(type: PickedPhoto.self),
+                  let prepared = await PosterEncoding.prepared(photo.data) else { continue }
+            images.append((title: "Movie \(next)", data: prepared))
             next += 1
         }
-        await env.importImages(images)
+        await finishImport(images, attempted: !items.isEmpty)
     }
 
     func importFiles(_ result: Result<[URL], Error>) async {
         guard case .success(let urls) = result else { return }
         var images: [(title: String, data: Data)] = []
         for url in urls {
-            let access = url.startAccessingSecurityScopedResource()
-            defer { if access { url.stopAccessingSecurityScopedResource() } }
-            guard let data = try? Data(contentsOf: url) else { continue }
-            images.append((title: url.deletingPathExtension().lastPathComponent, data: data))
+            guard let prepared = await PosterEncoding.preparedFile(url) else { continue }
+            images.append((title: url.deletingPathExtension().lastPathComponent, data: prepared))
         }
-        await env.importImages(images)
+        await finishImport(images, attempted: !urls.isEmpty)
+    }
+
+    func finishImport(_ images: [(title: String, data: Data)], attempted: Bool) async {
+        guard attempted else { return }
+        let added = await env.importImages(images)
+        if added == 0 {
+            notice = images.isEmpty
+                ? "Those files couldn't be imported."
+                : "Those posters are already in your library."
+        }
     }
 }

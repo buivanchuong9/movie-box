@@ -101,7 +101,7 @@ final class SearchViewModel {
         } catch {
             guard requestID == token else { return }
             if reset { hits = [] }
-            errorMessage = error.localizedDescription
+            errorMessage = AppError.userMessage(for: error)
         }
         if requestID == token {
             isLoading = false

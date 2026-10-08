@@ -7,23 +7,9 @@ struct SearchView: View {
     @State private var showSort = false
     @State private var showPremium = false
     @State private var draft = MediaFilters()
-    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Search")
-                .font(AppTypography.screenTitle)
-                .foregroundStyle(AppColors.textPrimary)
-                .padding(.horizontal, AppSpacing.page)
-                .accessibilityAddTraits(.isHeader)
-
-            SearchBar(text: queryBinding, onCancel: cancel, onSubmit: {
-                env.library.addSearch(env.searchModel.query)
-                focused = false
-            })
-            .padding(.horizontal, AppSpacing.page)
-            .focused($focused)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.xs) {
                     ForEach(SearchScope.allCases) { scope in
@@ -54,8 +40,8 @@ struct SearchView: View {
                 } else if env.searchModel.hits.isEmpty {
                     EmptyStateView(
                         systemImage: "magnifyingglass",
-                        title: "No matches",
-                        message: "Try another title from the movies you imported."
+                        title: "No results",
+                        message: "Nothing in your library matches that search."
                     )
                 } else {
                     results
@@ -64,7 +50,13 @@ struct SearchView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(AppColors.background)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Search")
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: queryBinding, prompt: "Movies, shows, and people")
+        .onSubmit(of: .search) {
+            let trimmed = env.searchModel.query.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.count >= 2 { env.library.addSearch(trimmed) }
+        }
         .scrollDismissesKeyboard(.immediately)
         .movieImporter(isPresented: $showImporter)
         .task { await env.searchModel.loadTrendingIfNeeded() }
@@ -102,18 +94,13 @@ struct SearchView: View {
         )
     }
 
-    private func cancel() {
-        env.searchModel.updateQuery("")
-        focused = false
-    }
-
     private var suggestions: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.xl) {
                 if !env.library.searches.isEmpty {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         HStack {
-                            Text("Recent")
+                            Text("Recent searches")
                                 .font(AppTypography.section)
                                 .foregroundStyle(AppColors.textPrimary)
                             Spacer()
@@ -141,17 +128,17 @@ struct SearchView: View {
                     }
                 }
 
-                if env.searchModel.trending.isEmpty {
+                if env.searchModel.trending.isEmpty && env.library.searches.isEmpty {
                     EmptyStateView(
-                        systemImage: "photo.on.rectangle.angled",
-                        title: "Add your movies",
-                        message: "Import posters from your photo library or from image files.",
-                        actionTitle: "Import",
-                        action: { showImporter = true }
+                        systemImage: "magnifyingglass",
+                        title: "Search your library",
+                        message: "Find a movie, show, or person in your collection.",
+                        actionTitle: env.imports.movies.isEmpty ? "Import Movies" : nil,
+                        action: env.imports.movies.isEmpty ? { showImporter = true } : nil
                     )
-                } else {
+                } else if !env.searchModel.trending.isEmpty {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Your Movies")
+                        Text("In your library")
                             .font(AppTypography.section)
                             .foregroundStyle(AppColors.textPrimary)
                         FlowLayout(spacing: AppSpacing.xs) {

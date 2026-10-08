@@ -48,8 +48,8 @@ struct GenreChip: View {
             Text(title)
                 .font(AppTypography.captionBold)
                 .foregroundStyle(isSelected ? AppColors.onAccent : AppColors.textPrimary)
-                .padding(.horizontal, 14)
-                .frame(minHeight: 36)
+                .padding(.horizontal, AppSpacing.md)
+                .frame(minHeight: AppSpacing.touch)
                 .background(isSelected ? AppColors.accentFill : AppColors.elevated, in: Capsule())
                 .overlay {
                     Capsule().strokeBorder(isSelected ? Color.clear : AppColors.separator, lineWidth: 1)

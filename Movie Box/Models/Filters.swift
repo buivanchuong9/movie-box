@@ -33,7 +33,11 @@ struct MediaFilters: Equatable, Hashable {
     var sort: SortOption = .popularity
 
     var isActive: Bool {
-        genreID != nil || year != nil || minimumRating != nil || language != nil || country != nil || sort != .popularity
+        activeCount > 0 || sort != .popularity
+    }
+
+    var activeCount: Int {
+        [genreID != nil, year != nil, minimumRating != nil, language != nil, country != nil].filter { $0 }.count
     }
 
     func allows(_ item: MediaSummary) -> Bool {

@@ -34,6 +34,11 @@ extension View {
         modifier(LumenCardModifier())
     }
 
+    func lumenColumn(maxWidth: CGFloat = 760) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+    }
+
     @ViewBuilder
     func matchedZoomSource<ID: Hashable>(id: ID, in namespace: Namespace.ID?) -> some View {
         if #available(iOS 18, *), let namespace {

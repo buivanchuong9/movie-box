@@ -96,7 +96,7 @@ final class MovieDetailViewModel {
             if detail == nil {
                 errorMessage = (error as? AppError) == .offline || !env.network.isOnline
                     ? "You're offline"
-                    : error.localizedDescription
+                    : AppError.userMessage(for: error)
             }
             return true
         }
@@ -200,7 +200,7 @@ final class TVDetailViewModel {
             hasLoaded = false
         } catch {
             if detail == nil {
-                errorMessage = error.localizedDescription
+                errorMessage = AppError.userMessage(for: error)
                 hasLoaded = false
             }
         }
@@ -242,7 +242,7 @@ final class PersonDetailViewModel {
         } catch is CancellationError {
             hasLoaded = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppError.userMessage(for: error)
             hasLoaded = false
         }
         isLoading = false

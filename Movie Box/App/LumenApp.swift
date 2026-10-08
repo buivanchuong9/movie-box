@@ -1,3 +1,4 @@
+import os
 import SwiftData
 import SwiftUI
 
@@ -29,7 +30,9 @@ struct LumenApp: App {
                 do {
                     environment = try AppEnvironment.live()
                 } catch {
-                    launchError = error.localizedDescription
+                    Logger(subsystem: "com.lumen.discovery", category: "persistence")
+                        .error("Library store failed: \(error.localizedDescription, privacy: .public)")
+                    launchError = "Your library couldn't be opened. Please try again."
                 }
             }
         }

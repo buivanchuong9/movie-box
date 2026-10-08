@@ -8,30 +8,18 @@ struct DiscoverView: View {
     @State private var draft = MediaFilters()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Discover")
-                .font(AppTypography.screenTitle)
-                .foregroundStyle(AppColors.textPrimary)
-                .padding(.horizontal, AppSpacing.page)
-                .padding(.bottom, AppSpacing.sm)
-                .accessibilityAddTraits(.isHeader)
-
-            HStack {
-                Spacer()
-                Button {
-                    showImporter = true
-                } label: {
-                    Label("Import", systemImage: "plus")
-                        .font(AppTypography.captionBold)
-                        .foregroundStyle(AppColors.onAccent)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 36)
-                        .background(AppColors.accentFill, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, AppSpacing.page)
-                .padding(.bottom, AppSpacing.sm)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text("Discover")
+                    .font(AppTypography.screenTitle)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Browse your film library by mood, year, and origin.")
+                    .font(AppTypography.callout)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.horizontal, AppSpacing.page)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.xs) {
@@ -40,29 +28,12 @@ struct DiscoverView: View {
                             Task { await env.discover.select(mode) }
                         }
                     }
-                    GenreChip(title: "Filters", isSelected: env.discover.filters.isActive) {
-                        draft = env.discover.filters
-                        showFilters = true
-                    }
                 }
                 .padding(.horizontal, AppSpacing.page)
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(GenreCatalog.featured) { genre in
-                        GenreChip(title: genre.name, isSelected: env.discover.filters.genreID == genre.id) {
-                            var filters = env.discover.filters
-                            filters.genreID = filters.genreID == genre.id ? nil : genre.id
-                            Task { await env.discover.apply(filters) }
-                        }
-                    }
-                }
+            filterControl
                 .padding(.horizontal, AppSpacing.page)
-                .padding(.vertical, AppSpacing.sm)
-            }
-
-            yearRow
 
             Group {
                 if env.discover.isLoading && env.discover.items.isEmpty {
@@ -90,13 +61,7 @@ struct DiscoverView: View {
                         }
                     }
                 } else if env.discover.items.isEmpty {
-                    EmptyStateView(
-                        systemImage: "photo.on.rectangle.angled",
-                        title: "No movies yet",
-                        message: "Import posters from your photo library or from image files.",
-                        actionTitle: "Import",
-                        action: { showImporter = true }
-                    )
+                    discoverEmpty
                 } else {
                     MediaGrid(items: env.discover.items, showsAds: true) {
                         Task { await env.discover.loadMore() }
@@ -130,59 +95,56 @@ struct DiscoverView: View {
         }
     }
 
-    private var yearRow: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Years")
-                .font(AppTypography.captionBold)
-                .foregroundStyle(AppColors.textSecondary)
-                .padding(.horizontal, AppSpacing.page)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(YearCatalog.recent.prefix(12), id: \.self) { year in
-                        GenreChip(title: String(year), isSelected: env.discover.filters.year == year) {
-                            var filters = env.discover.filters
-                            filters.year = filters.year == year ? nil : year
-                            Task { await env.discover.apply(filters) }
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.page)
+    private var filterControl: some View {
+        let count = env.discover.filters.activeCount
+        return Button {
+            draft = env.discover.filters
+            showFilters = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "line.3.horizontal.decrease")
+                Text(count == 0 ? "Filters" : "Filters · \(count)")
+                    .lineLimit(1)
             }
-            countryRow
+            .font(AppTypography.captionBold)
+            .foregroundStyle(count == 0 ? AppColors.textPrimary : AppColors.onAccent)
+            .padding(.horizontal, AppSpacing.md)
+            .frame(minHeight: AppSpacing.touch)
+            .background(count == 0 ? AppColors.surface : AppColors.accentFill, in: Capsule())
+            .overlay {
+                Capsule().strokeBorder(count == 0 ? AppColors.separator : Color.clear, lineWidth: 1)
+            }
         }
-        .padding(.bottom, AppSpacing.sm)
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel(count == 0 ? "Filters" : "Filters, \(count) active")
     }
 
-    private var countryRow: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack {
-                Text("Countries")
-                    .font(AppTypography.captionBold)
-                    .foregroundStyle(AppColors.textSecondary)
-                if !env.entitlements.isPremium {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2)
-                        .foregroundStyle(AppColors.accent)
+    @ViewBuilder
+    private var discoverEmpty: some View {
+        if env.discover.filters.isActive {
+            EmptyStateView(
+                systemImage: "line.3.horizontal.decrease",
+                title: "No matching titles",
+                message: "Nothing in your library fits these filters.",
+                actionTitle: "Reset Filters",
+                action: {
+                    Task { await env.discover.apply(MediaFilters()) }
                 }
-            }
-            .padding(.horizontal, AppSpacing.page)
-            .padding(.top, AppSpacing.xs)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(CountryOption.common.prefix(10)) { country in
-                        GenreChip(title: country.name, isSelected: env.discover.filters.country == country.code) {
-                            guard env.entitlements.isPremium else {
-                                showPremium = true
-                                return
-                            }
-                            var filters = env.discover.filters
-                            filters.country = filters.country == country.code ? nil : country.code
-                            Task { await env.discover.apply(filters) }
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.page)
-            }
+            )
+        } else if env.imports.movies.isEmpty {
+            EmptyStateView(
+                systemImage: "film.stack",
+                title: "Nothing to discover yet",
+                message: "Import a few posters and your film library will show up here.",
+                actionTitle: "Import Movies",
+                action: { showImporter = true }
+            )
+        } else {
+            EmptyStateView(
+                systemImage: "film",
+                title: "Nothing in \(env.discover.mode.title)",
+                message: "Try another category, or import another title."
+            )
         }
     }
 }

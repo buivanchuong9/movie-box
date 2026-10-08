@@ -95,6 +95,7 @@ struct SettingsView: View {
             #endif
         }
         .scrollContentBackground(.hidden)
+        .lumenColumn(maxWidth: 720)
         .background(AppColors.background)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)

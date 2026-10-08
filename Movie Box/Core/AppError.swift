@@ -31,6 +31,13 @@ enum AppError: LocalizedError, Equatable {
         }
     }
 
+    static func userMessage(for error: Error) -> String {
+        if let app = error as? AppError, let text = app.errorDescription {
+            return text
+        }
+        return "Something went wrong. Please try again."
+    }
+
     var allowsStaleCache: Bool {
         switch self {
         case .offline, .server, .rateLimited, .message:

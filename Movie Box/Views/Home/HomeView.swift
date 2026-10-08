@@ -38,8 +38,10 @@ struct HomeView: View {
 
             Spacer()
 
-            IconCircleButton(systemImage: "plus", label: "Import movies") {
-                showImporter = true
+            if env.home.hasContent {
+                IconCircleButton(systemImage: "plus", label: "Import movies") {
+                    showImporter = true
+                }
             }
             IconCircleButton(systemImage: "magnifyingglass", label: "Search") {
                 env.tabs.select(.search)
@@ -71,12 +73,13 @@ struct HomeView: View {
             }
         } else if !env.home.hasContent {
             EmptyStateView(
-                systemImage: "photo.on.rectangle.angled",
-                title: "Add your movies",
-                message: "Import posters from your photo library or from image files. Nothing is loaded from the internet.",
-                actionTitle: "Import",
+                systemImage: "film.stack",
+                title: "Build your movie shelf",
+                message: "Import posters to start a private movie library. Nothing is loaded from the internet.",
+                actionTitle: "Import Movies",
                 action: { showImporter = true }
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let message = env.home.errorMessage, !env.home.hasContent {
             if !env.network.isOnline {
                 EmptyStateView(
@@ -93,16 +96,29 @@ struct HomeView: View {
             }
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.section) {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if !env.network.isOnline {
                         OfflineView()
                     }
+                    librarySummary
                     CinematicHero(items: env.home.heroItems)
+                    if !env.home.popular.isEmpty {
+                        PosterCarousel(title: "Recently Added", items: env.home.popular, seeAll: CatalogQuery(title: "Recently Added", source: .popular))
+                    }
+                    if !env.library.history.isEmpty {
+                        PosterCarousel(title: "Recently Viewed", items: env.library.history.prefix(16).map(\.summary), seeAll: nil)
+                    }
+                    if !env.library.watched.isEmpty {
+                        PosterCarousel(title: "Watched", items: env.library.watched.prefix(16).map(\.summary), seeAll: nil)
+                    }
+                    if !env.library.favorites.isEmpty {
+                        PosterCarousel(title: "Favorites", items: env.library.favorites.prefix(16).map(\.summary), seeAll: nil)
+                    }
+                    if !env.library.watchlist.isEmpty {
+                        PosterCarousel(title: "Watchlist", items: env.library.watchlist.prefix(16).map(\.summary), seeAll: nil)
+                    }
                     if !env.home.forYou.isEmpty {
                         PosterCarousel(title: "For You", items: env.home.forYou, seeAll: CatalogQuery(title: "For You", source: .forYou, genreID: env.library.preferences.favoriteGenreIDs.first))
-                    }
-                    if !env.home.popular.isEmpty {
-                        PosterCarousel(title: "Your Movies", items: env.home.popular, seeAll: CatalogQuery(title: "Your Movies", source: .popular))
                     }
                     if env.ads.showsInline(sectionIndex: 3), env.home.hasContent {
                         AdInlineCard()
@@ -133,6 +149,37 @@ struct HomeView: View {
             .refreshable {
                 await env.home.reload(signals: signals)
             }
+        }
+    }
+
+    private var librarySummary: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            Text(greeting)
+                .font(AppTypography.section)
+                .foregroundStyle(AppColors.textPrimary)
+            Text(shelfLine)
+                .font(AppTypography.callout)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(.horizontal, AppSpacing.page)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        default: return "Good evening"
+        }
+    }
+
+    private var shelfLine: String {
+        let count = env.imports.movies.count
+        switch count {
+        case 0: return "Your private movie library"
+        case 1: return "1 title in your movie library"
+        default: return "\(count) titles in your movie library"
         }
     }
 

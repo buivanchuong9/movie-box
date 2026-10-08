@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     var embedded = false
     var required = false
@@ -15,6 +16,7 @@ struct PaywallView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         header
+                        benefits
                         if env.entitlements.isPremium {
                             activeBanner
                         }
@@ -29,6 +31,7 @@ struct PaywallView: View {
                     }
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, AppSpacing.xl)
+                    .lumenColumn(maxWidth: 640)
                 }
             }
         }
@@ -54,21 +57,9 @@ struct PaywallView: View {
     }
 
     private var background: some View {
-        ZStack {
-            AppColors.background
-            Circle()
-                .fill(AppColors.accent.opacity(0.22))
-                .frame(width: 280, height: 280)
-                .blur(radius: 40)
-                .offset(y: -220)
-            Circle()
-                .fill(AppColors.accent.opacity(0.08))
-                .frame(width: 180, height: 180)
-                .blur(radius: 30)
-                .offset(x: 120, y: -80)
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+        AppColors.background
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
     }
 
     private var topBar: some View {
@@ -85,6 +76,20 @@ struct PaywallView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Movie Box")
             Spacer()
+            if !required {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .frame(width: AppSpacing.touch, height: AppSpacing.touch)
+                        .background(AppColors.surface, in: Circle())
+                        .overlay { Circle().strokeBorder(AppColors.separator, lineWidth: 1) }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
+            }
         }
         .padding(.horizontal, AppSpacing.page)
         .padding(.top, AppSpacing.sm)
@@ -95,13 +100,36 @@ struct PaywallView: View {
             Text("Lumen Plus")
                 .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
-            Text(required ? "Choose a plan to use Movie Box." : "Get more from your movie discovery experience.")
+            Text(required ? "Choose a plan to use Movie Box." : "A quieter way to keep your movie library.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.top, AppSpacing.sm)
+        .padding(.top, AppSpacing.xs)
         .accessibilityElement(children: .combine)
+    }
+
+    private var benefits: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            benefit("Advanced filters")
+            benefit("Personalized recommendations")
+            benefit("Viewing statistics")
+            benefit("A premium library experience")
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.separator, lineWidth: 1)
+        }
+    }
+
+    private func benefit(_ title: String) -> some View {
+        Label(title, systemImage: "checkmark")
+            .font(AppTypography.callout)
+            .foregroundStyle(AppColors.textPrimary)
+            .labelStyle(BenefitLabelStyle())
     }
 
     private var activeBanner: some View {
@@ -154,48 +182,47 @@ struct PaywallView: View {
                         Text(plan.kind.title.uppercased())
                             .font(AppTypography.captionBold)
                             .tracking(1.1)
-                            .foregroundStyle(featured ? AppColors.onAccent : AppColors.accent)
+                            .foregroundStyle(selected ? AppColors.onAccent : AppColors.accent)
                         if let savings = plan.savingsText {
                             Text(savings.uppercased())
                                 .font(AppTypography.captionBold)
-                                .foregroundStyle(AppColors.onAccent)
+                                .foregroundStyle(selected ? AppColors.onAccent : AppColors.accent)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(AppColors.accentFill, in: Capsule())
+                                .background(selected ? AppColors.onAccent.opacity(0.16) : AppColors.accent.opacity(0.16), in: Capsule())
                         }
                     }
                     Text(plan.name)
-                        .font(featured ? AppTypography.section : AppTypography.cardTitle)
-                        .foregroundStyle(featured && selected ? AppColors.onAccent : AppColors.textPrimary)
+                        .font(AppTypography.cardTitle)
+                        .foregroundStyle(selected ? AppColors.onAccent : AppColors.textPrimary)
                         .multilineTextAlignment(.leading)
                     Text(plan.billingNote)
                         .font(AppTypography.caption)
-                        .foregroundStyle(featured && selected ? AppColors.onAccent.opacity(0.75) : AppColors.textSecondary)
+                        .foregroundStyle(selected ? AppColors.onAccent.opacity(0.75) : AppColors.textSecondary)
                 }
                 Spacer(minLength: AppSpacing.sm)
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(plan.displayPrice)
-                        .font(featured ? AppTypography.ratingLarge : AppTypography.section)
-                        .foregroundStyle(featured && selected ? AppColors.onAccent : AppColors.textPrimary)
+                        .font(AppTypography.ratingLarge)
+                        .foregroundStyle(selected ? AppColors.onAccent : AppColors.textPrimary)
                         .multilineTextAlignment(.trailing)
                         .minimumScaleFactor(0.7)
                     if let period = periodLabel(for: plan) {
                         Text(period)
                             .font(AppTypography.captionBold)
-                            .foregroundStyle(featured && selected ? AppColors.onAccent.opacity(0.8) : AppColors.textTertiary)
+                            .foregroundStyle(selected ? AppColors.onAccent.opacity(0.8) : AppColors.textTertiary)
                     }
                 }
             }
             .padding(.horizontal, AppSpacing.lg)
-            .padding(.vertical, featured ? AppSpacing.lg : AppSpacing.md)
-            .frame(maxWidth: .infinity, minHeight: featured ? 108 : 88, alignment: .leading)
-            .background(cardBackground(featured: featured, selected: selected))
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous))
+            .padding(.vertical, AppSpacing.md)
+            .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
+            .background(selected ? AppColors.accentFill : AppColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous)
-                    .strokeBorder(cardStroke(featured: featured, selected: selected), lineWidth: selected ? 2 : 1)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .strokeBorder(selected ? AppColors.accentFill : (featured ? AppColors.accent.opacity(0.45) : AppColors.separator), lineWidth: 1)
             }
-            .shadow(color: selected ? AppColors.accent.opacity(0.28) : .clear, radius: 16, y: 8)
         }
         .buttonStyle(.plain)
         .disabled(model.phase == .purchasing || model.phase == .restoring)
@@ -208,26 +235,6 @@ struct PaywallView: View {
         let period = suffix.trimmingCharacters(in: .whitespaces)
         guard !period.isEmpty else { return nil }
         return "/ \(period)"
-    }
-
-    private func cardBackground(featured: Bool, selected: Bool) -> some ShapeStyle {
-        if featured && selected {
-            AnyShapeStyle(LinearGradient(
-                colors: [AppColors.accentFill, AppColors.accent.opacity(0.85)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ))
-        } else if selected {
-            AnyShapeStyle(AppColors.elevated)
-        } else {
-            AnyShapeStyle(AppColors.surface)
-        }
-    }
-
-    private func cardStroke(featured: Bool, selected: Bool) -> Color {
-        if selected { return AppColors.accent }
-        if featured { return AppColors.accent.opacity(0.55) }
-        return AppColors.separator
     }
 
     @ViewBuilder
@@ -357,6 +364,19 @@ struct PaywallView: View {
             }
             .font(AppTypography.caption)
             .foregroundStyle(AppColors.textSecondary)
+        }
+    }
+}
+
+private struct BenefitLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            configuration.icon
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 22, height: 22)
+                .background(AppColors.accent.opacity(0.16), in: Circle())
+            configuration.title
         }
     }
 }

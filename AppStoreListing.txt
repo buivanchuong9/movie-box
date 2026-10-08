@@ -34,7 +34,7 @@ Movie Box does not stream or download movies. There is no account and no sign-in
 3. Products:
    - Monthly: com.lumen.discovery.plus.monthly ($3.99 / month in the US store configuration)
    - Annual: com.lumen.discovery.plus.annual ($24.99 / year)
-   - Lifetime: com.lumen.discovery.plus.lifetime ($29.99, one-time, non-consumable)
+   - Lifetime: com.lumen.discovery.plus.lifetime ($34.99, one-time, non-consumable)
 4. After purchase, the library is empty until you add images. On Home, tap the plus button. On Discover, tap Import. Choose Photo Library or Files. You can select more than one image. Photos are named Movie 1, Movie 2, and so on. Files keep the file name.
 5. Those titles then appear on Home, Discover, Search, and the detail screen. You can save them to a watchlist, favorites, or watched.
 6. Settings includes Restore Purchases and, for an active subscription, Manage Subscription. Statistics and the advanced year, rating, language, and country filters are part of Lumen Plus.
@@ -110,7 +110,7 @@ After the introduction, Movie Box asks you to purchase Lumen Plus before the lib
 
 - Monthly, product ID com.lumen.discovery.plus.monthly. In the United States store configuration the price is $3.99 per month. Payment is charged to your Apple ID. The subscription renews each month unless you cancel at least 24 hours before the end of the current period. Renewal is charged within 24 hours before the period ends.
 - Annual, product ID com.lumen.discovery.plus.annual. In the United States store configuration the price is $24.99 per year. The same auto-renewal rules apply, once per year.
-- Lifetime, product ID com.lumen.discovery.plus.lifetime. In the United States store configuration the price is $29.99 once. This is a non-consumable purchase, not a renewing subscription.
+- Lifetime, product ID com.lumen.discovery.plus.lifetime. In the United States store configuration the price is $34.99 once. This is a non-consumable purchase, not a renewing subscription.
 
 Prices shown in the App Store may differ by country and currency. Lumen Plus includes advanced filters, recommendations, statistics, and removal of in-app Lumen Plus messages.
 

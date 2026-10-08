@@ -82,7 +82,7 @@ final class DiscoverViewModel {
             guard requestID == token else { return }
             items = []
             needsAPIKey = (error as? AppError) == .missingAPIKey
-            errorMessage = error.localizedDescription
+            errorMessage = AppError.userMessage(for: error)
         }
         if requestID == token { isLoading = false }
     }
@@ -167,7 +167,7 @@ final class CatalogViewModel {
         } catch is CancellationError {
             return
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppError.userMessage(for: error)
         }
         isLoading = false
     }
