@@ -58,7 +58,9 @@ struct RatingView: View {
                     .foregroundStyle(AppColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             if reduceMotion {
                 revealed = true

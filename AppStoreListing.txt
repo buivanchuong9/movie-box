@@ -1,0 +1,159 @@
+BUNDLE ID
+com.lumen.discovery
+----------------------
+APP NAME
+Movie Box
+----------------------
+SUBTITLE
+Import and organize films
+----------------------
+URL
+Privacy: https://sites.google.com/view/movie-box-app/privacy
+Terms: https://sites.google.com/view/movie-box-app/terms
+Support: https://sites.google.com/view/movie-box-app/support
+
+Publish the three pages below on one Google Site named movie-box-app before you submit. App Store Connect needs these links to open.
+----------------------
+DESCRIPTION
+Movie Box is a private shelf for the films you care about. Add a poster from your photo library or from an image file, and it becomes a title in your library. Nothing is streamed, and Movie Box does not download a movie catalog.
+
+Browse what you added on Home, Discover, and Search. Open a title for its poster, overview, and the lists you keep: watchlist, favorites, and watched. Search looks only through the titles on your device.
+
+Lumen Plus unlocks the full experience after a short introduction. Choose Monthly, Annual, or Lifetime. Plus adds advanced filters, recommendations shaped by the genres you pick, and statistics for what you have watched. You can restore a purchase from Settings and manage a subscription in your Apple ID.
+
+Your posters, lists, searches, and preferences stay on this iPhone. There is no Movie Box account. Delete the app whenever you want the library removed.
+----------------------
+KEYWORDS
+watchlist,favorites,cinema,collection,tracker,offline,photos,discover,ratings,shelf,series,genres
+----------------------
+REVIEW NOTE
+Movie Box does not stream or download movies. There is no account and no sign-in.
+
+1. On first launch, swipe through the introduction. You can tap Skip, then Not now, to finish it. The posters on these screens are bundled in the app. They are not loaded from the internet.
+2. The next screen is the paywall. A purchase is required before the library opens. Use a Sandbox Apple ID.
+3. Products:
+   - Monthly: com.lumen.discovery.plus.monthly ($3.99 / month in the US store configuration)
+   - Annual: com.lumen.discovery.plus.annual ($24.99 / year)
+   - Lifetime: com.lumen.discovery.plus.lifetime ($29.99, one-time, non-consumable)
+4. After purchase, the library is empty until you add images. On Home, tap the plus button. On Discover, tap Import. Choose Photo Library or Files. You can select more than one image. Photos are named Movie 1, Movie 2, and so on. Files keep the file name.
+5. Those titles then appear on Home, Discover, Search, and the detail screen. You can save them to a watchlist, favorites, or watched.
+6. Settings includes Restore Purchases and, for an active subscription, Manage Subscription. Statistics and the advanced year, rating, language, and country filters are part of Lumen Plus.
+7. In-app Lumen Plus messages are our own placements. There is no third-party advertising SDK.
+8. Deleting the app removes the imported images and lists. The app does not use non-exempt encryption.
+----------------------
+PRIVACY
+Privacy Policy
+Movie Box
+Last updated: October 8, 2026
+
+This policy explains what Movie Box does with information on your device. Movie Box is published for the iOS app with bundle ID com.lumen.discovery.
+
+What the app is
+Movie Box lets you import poster images and keep a personal film library. It does not stream movies, and it does not require an account.
+
+Information stored on your device
+When you use Movie Box, the following stays on your iPhone:
+
+- Poster images you import from the photo picker or from files you choose
+- Titles created from those images
+- Watchlist, favorites, watched titles, and episode progress
+- Recent searches and recently viewed titles
+- Genre preferences chosen during introduction
+- Appearance, content language, and notification preferences
+- A local cache of images the app has already opened
+
+Movie Box does not upload this library to a server we operate. We do not run a Movie Box account system, and we do not ask for your name, email address, phone number, or contacts.
+
+Photos and files
+Import uses the system photo picker and the system file picker. Movie Box receives only the images you select for that import. It does not ask for ongoing access to your entire photo library. File access is limited to the files you pick.
+
+Purchases
+Lumen Plus is sold through Apple In-App Purchase. Apple processes the payment and tells the app whether Monthly, Annual, or Lifetime is active. Movie Box does not receive your card number. Subscription status is handled by your Apple ID. You can restore purchases in Settings.
+
+What we do not do
+- We do not sell personal information.
+- We do not use a third-party advertising network or a tracking SDK.
+- We do not build an advertising profile of you.
+- We do not download a movie catalog from the internet in this version of the app.
+- Messages about Lumen Plus inside the app are our own product messages.
+
+Notifications
+If you turn notifications on, that choice is stored on the device. Movie Box does not send a notification digest from a server.
+
+Children
+Movie Box is not directed to children under 13, and we do not knowingly collect personal information from children.
+
+How to delete your information
+Delete Movie Box from your iPhone. That removes the imported images, lists, searches, and preferences stored by the app. Purchases remain with your Apple ID and can be managed in Settings > Apple ID > Subscriptions.
+
+Contact
+Questions about this policy: https://sites.google.com/view/movie-box-app/support
+----------------------
+TERMS
+Terms of Use
+Movie Box
+Last updated: October 8, 2026
+
+These terms cover the Movie Box iOS app, bundle ID com.lumen.discovery.
+
+The service
+Movie Box is a personal library for poster images and the lists you keep around them. It does not host, stream, rent, or download movies or TV episodes. Trailers and full videos are not provided by the app.
+
+Your images
+You choose which images to import. You are responsible for having the right to store and view those images. Titles created from photos are named automatically. Titles created from files use the file name. You can remove the library by deleting the app.
+
+Introduction screens
+The first screens show artwork that is included inside the app so you can see the layout. That artwork is not a catalog you can play, and it is not added to your library unless you import an image yourself.
+
+Lumen Plus
+After the introduction, Movie Box asks you to purchase Lumen Plus before the library opens. Plans offered in the app:
+
+- Monthly, product ID com.lumen.discovery.plus.monthly. In the United States store configuration the price is $3.99 per month. Payment is charged to your Apple ID. The subscription renews each month unless you cancel at least 24 hours before the end of the current period. Renewal is charged within 24 hours before the period ends.
+- Annual, product ID com.lumen.discovery.plus.annual. In the United States store configuration the price is $24.99 per year. The same auto-renewal rules apply, once per year.
+- Lifetime, product ID com.lumen.discovery.plus.lifetime. In the United States store configuration the price is $29.99 once. This is a non-consumable purchase, not a renewing subscription.
+
+Prices shown in the App Store may differ by country and currency. Lumen Plus includes advanced filters, recommendations, statistics, and removal of in-app Lumen Plus messages.
+
+Manage or cancel a subscription in your device Settings, under Apple ID, then Subscriptions. Deleting the app does not cancel a subscription. Restore Purchases is available in Movie Box Settings.
+
+Acceptable use
+Do not use Movie Box to break the law, to interfere with the app, or to misrepresent content you do not have rights to use. We may stop offering the app, but purchases already billed by Apple are handled under Apple’s refund rules.
+
+Disclaimer
+The app is provided as it is available on the App Store. Film information you see for an imported image is limited to what the app stores on the device. Movie Box does not promise that a title, rating, or description from an outside database will appear.
+
+Contact
+https://sites.google.com/view/movie-box-app/support
+----------------------
+SUPPORT
+Movie Box Support
+https://sites.google.com/view/movie-box-app/support
+
+Movie Box helps you keep a personal film shelf on your iPhone. You import poster images. The app does not stream movies and does not use an account.
+
+Add a title
+1. Finish the introduction.
+2. Purchase Lumen Plus, or restore an earlier purchase.
+3. On Home, tap the plus button. On Discover, tap Import.
+4. Choose Photo Library or Files.
+5. Select one or more images.
+Photos are saved as Movie 1, Movie 2, and so on. A file keeps its file name, without the extension.
+
+Find a title
+Home shows what you imported. Discover is the same library in a grid. Search matches the titles on this device only.
+
+Lists
+Open a title to add it to your watchlist, favorites, or watched list. Those lists stay on the device.
+
+Lumen Plus
+Monthly, Annual, and Lifetime are sold by Apple. If the app asks you to subscribe again after you already paid, open Settings in Movie Box and tap Restore Purchases. To cancel a renewing plan, open iPhone Settings, tap your Apple ID, then Subscriptions. Lifetime does not renew.
+
+Remove your library
+Delete Movie Box. Imported images, lists, and preferences stored by the app are removed with it. This does not cancel an Apple subscription.
+
+Privacy and terms
+Privacy: https://sites.google.com/view/movie-box-app/privacy
+Terms: https://sites.google.com/view/movie-box-app/terms
+
+Contact
+Use the comment or contact area on this Google Site and include your device model, iOS version, and whether you are writing about import, purchase, or restore. We do not offer phone support.

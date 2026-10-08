@@ -105,7 +105,10 @@
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Lumen Plus Monthly",
           "subscriptionGroupID" : "LUMENPLUS",
-          "type" : "RecurringSubscription"
+          "type" : "RecurringSubscription",
+          "winBackOffers" : [
+
+          ]
         },
         {
           "adHocOffers" : [
@@ -130,13 +133,16 @@
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Lumen Plus Annual",
           "subscriptionGroupID" : "LUMENPLUS",
-          "type" : "RecurringSubscription"
+          "type" : "RecurringSubscription",
+          "winBackOffers" : [
+
+          ]
         }
       ]
     }
   ],
   "version" : {
-    "major" : 3,
+    "major" : 4,
     "minor" : 0
   }
 }

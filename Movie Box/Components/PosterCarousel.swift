@@ -44,7 +44,9 @@ struct PosterCarousel: View {
                 }
                 .padding(.horizontal, AppSpacing.page)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -32,6 +32,14 @@ actor ImageStore {
             return disk
         }
 
+        if url.isFileURL {
+            let raw = try Data(contentsOf: url)
+            let prepared = Self.downsample(raw, maxPixel: maxPixel) ?? raw
+            remember(prepared, for: key)
+            try? prepared.write(to: file, options: .atomic)
+            return prepared
+        }
+
         let (raw, response) = try await session.data(from: url)
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

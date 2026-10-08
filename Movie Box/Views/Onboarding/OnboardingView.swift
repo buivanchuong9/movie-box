@@ -4,115 +4,302 @@ struct OnboardingView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var page = 0
-    @State private var selected: Set<Int> = []
 
-    private let pages: [(String, String, String)] = [
-        ("sparkles", "Discover Movies You'll Love", "A cinematic home for what's trending, acclaimed, and about to arrive."),
-        ("bookmark.fill", "Keep Your Watchlist Organized", "Save titles, mark what you've watched, and pick up episodes where you left off."),
-        ("star.circle.fill", "Find What's Worth Watching", "Ratings stay honest. Recommendations follow the genres and titles you actually choose.")
-    ]
+    private let visualPageCount = 4
+    private let violet = Color(red: 0.20, green: 0.05, blue: 0.34)
+    private let violetDeep = Color(red: 0.10, green: 0.03, blue: 0.20)
 
     var body: some View {
-        VStack(spacing: 0) {
-            if page < pages.count {
-                intro
-            } else {
-                genres
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.background)
+        visualIntro
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var intro: some View {
-        let item = pages[page]
-        return VStack(spacing: AppSpacing.xl) {
-            HStack {
-                Spacer()
-                Button("Skip") { page = pages.count }
-                    .font(AppTypography.captionBold)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .frame(minHeight: AppSpacing.touch)
-            }
-            .padding(.horizontal, AppSpacing.page)
-            Spacer()
-            Image(systemName: item.0)
-                .font(.system(size: 48, weight: .light))
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 108, height: 108)
-                .background(AppColors.elevated, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .accessibilityHidden(true)
-            VStack(spacing: AppSpacing.sm) {
-                Text(item.1)
-                    .font(AppTypography.heroTitle)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                Text(item.2)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            HStack(spacing: 6) {
-                ForEach(0..<pages.count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == page ? AppColors.accent : AppColors.elevated)
-                        .frame(width: index == page ? 18 : 6, height: 6)
+    private var visualIntro: some View {
+        ZStack {
+            LinearGradient(colors: [violet, Color(red: 0.33, green: 0.08, blue: 0.46), violetDeep], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+
+            Group {
+                switch page {
+                case 0: genrePage
+                case 1: discoverPage
+                case 2: actorsPage
+                default: detailPage
                 }
             }
-            .accessibilityLabel("Page \(page + 1) of \(pages.count)")
-            Spacer()
-            PrimaryButton(title: page == pages.count - 1 ? "Choose Genres" : "Continue") {
-                advance()
+            .padding(.bottom, 92)
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Skip") { finish() }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.82))
+                        .frame(minHeight: 44)
+                }
+                .padding(.horizontal, 22)
+                Spacer()
             }
-            .padding(.horizontal, AppSpacing.page)
-            .padding(.bottom, AppSpacing.lg)
+
+            VStack(spacing: 14) {
+                Spacer()
+                HStack(spacing: 7) {
+                    ForEach(0..<visualPageCount, id: \.self) { index in
+                        Capsule()
+                            .fill(index == page ? Color.white : Color.white.opacity(0.35))
+                            .frame(width: index == page ? 18 : 6, height: 6)
+                    }
+                }
+                .accessibilityLabel("Page \(page + 1) of \(visualPageCount)")
+                Button(action: advance) {
+                    Text(page == visualPageCount - 1 ? "See Plans" : "Continue")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(violetDeep)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(.white, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var genrePage: some View {
+        ZStack {
+            posterCollage
+            VStack(spacing: 0) {
+                VStack(spacing: -2) {
+                    Text("Movies For")
+                        .font(.system(size: 42, weight: .bold, design: .serif))
+                    Text("Every Genre")
+                        .font(.system(size: 36, weight: .bold, design: .serif))
+                }
+                .foregroundStyle(.white)
+                .shadow(color: violetDeep.opacity(0.55), radius: 16, y: 6)
+                .multilineTextAlignment(.center)
+                .padding(.top, 72)
+                Spacer()
+                HStack(alignment: .bottom) {
+                    Image(systemName: "film.stack")
+                        .font(.system(size: 54, weight: .light))
+                        .foregroundStyle(.white)
+                        .accessibilityHidden(true)
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: -4) {
+                        Text("1000+")
+                            .font(.system(size: 44, weight: .bold, design: .serif))
+                        Text("Movies")
+                            .font(.system(size: 26, weight: .semibold, design: .serif))
+                    }
+                    .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 22)
+                .padding(.bottom, 8)
+            }
         }
     }
 
-    private var genres: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Select Your Favorite Genres")
-                    .font(AppTypography.heroTitle)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("Lumen uses these to shape For You. You can skip this and browse everything.")
-                    .font(AppTypography.callout)
-                    .foregroundStyle(AppColors.textSecondary)
+    private var posterCollage: some View {
+        let spots: [(CGFloat, CGFloat, Double)] = [
+            (-118, -250, -8), (118, -236, 7),
+            (-132, -40, 6), (132, -28, -6),
+            (-110, 150, -4), (116, 164, 8),
+            (-36, 250, 3), (48, -120, -2)
+        ]
+        return ZStack {
+            ForEach(Array(ReviewImages.collage.enumerated()), id: \.offset) { index, name in
+                let spot = spots[index]
+                ReviewPhoto(folder: "posters", name: name)
+                    .frame(width: 92, height: 138)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .rotationEffect(.degrees(spot.2))
+                    .offset(x: spot.0, y: spot.1)
+                    .opacity(0.92)
             }
-            .padding(.top, AppSpacing.xl)
-            FlowLayout(spacing: AppSpacing.sm) {
-                ForEach(GenreCatalog.featured) { genre in
-                    GenreChip(title: genre.name, isSelected: selected.contains(genre.id)) {
-                        if selected.contains(genre.id) {
-                            selected.remove(genre.id)
-                        } else {
-                            selected.insert(genre.id)
-                        }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var discoverPage: some View {
+        VStack(spacing: 16) {
+            phoneMock
+                .frame(maxWidth: 280)
+                .frame(maxHeight: 430)
+                .padding(.top, 36)
+            Text("Discover\nTrending Movies")
+                .font(.system(size: 36, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.7)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 28)
+    }
+
+    private var phoneMock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Movie Box")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                Spacer()
+                Image(systemName: "magnifyingglass")
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.top, 14)
+            HStack(spacing: 16) {
+                Text("Movies").font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                Text("TV Shows").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.45))
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            phoneRow("Upcoming", ReviewImages.upcoming, titles: ["Dune: Part Two", "Civil War", "Challengers"])
+            phoneRow("Most Popular", ReviewImages.popular, titles: ["The Dark Knight", "The Godfather", "The Matrix"])
+            phoneRow("New Releases", ReviewImages.fresh, titles: ["Dune", "Oppenheimer", "Spider-Man"])
+            Spacer(minLength: 0)
+        }
+        .background(Color(red: 0.07, green: 0.06, blue: 0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+        }
+    }
+
+    private func phoneRow(_ title: String, _ names: [String], titles: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+            HStack(spacing: 8) {
+                ForEach(Array(names.enumerated()), id: \.offset) { index, name in
+                    VStack(alignment: .leading, spacing: 3) {
+                        ReviewPhoto(folder: "posters", name: name)
+                            .frame(height: 72)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        Text(titles[index])
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal, 12)
+        }
+    }
+
+    private var actorsPage: some View {
+        VStack(spacing: 18) {
+            Text("All Your\nFavorite Actors")
+                .font(.system(size: 36, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .padding(.top, 64)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 4), spacing: 16) {
+                ForEach(ReviewImages.actors, id: \.file) { actor in
+                    VStack(spacing: 6) {
+                        ReviewPhoto(folder: "actors", name: actor.file)
+                            .frame(width: 64, height: 64)
+                            .clipShape(Circle())
+                        Text(actor.name)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .frame(height: 24)
                     }
                 }
             }
-            Spacer()
-            PrimaryButton(title: "Start Watching") {
-                env.library.completeOnboarding(genres: Array(selected))
-            }
-            Button("Not now") {
-                env.library.completeOnboarding(genres: [])
-            }
-            .font(AppTypography.captionBold)
-            .foregroundStyle(AppColors.textSecondary)
-            .frame(maxWidth: .infinity, minHeight: AppSpacing.touch)
+            .padding(.horizontal, 22)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, AppSpacing.page)
-        .padding(.bottom, AppSpacing.lg)
+    }
+
+    private var detailPage: some View {
+        VStack(spacing: 14) {
+            Text("Explore\nMovie Details")
+                .font(.system(size: 34, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .padding(.top, 56)
+            VStack(alignment: .leading, spacing: 10) {
+                ReviewPhoto(folder: "backdrops", name: "backdrop-dune")
+                    .frame(height: 148)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Text("Dune")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("A gifted heir travels to a desert planet and finds that survival, prophecy, and empire are the same fight.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineLimit(3)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    detailFact("Status", "Released")
+                    detailFact("Language", "English")
+                    detailFact("Year", "2021")
+                    detailFact("Runtime", "2h 35m")
+                }
+            }
+            .padding(14)
+            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.horizontal, 22)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func detailFact(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.55))
+            Text(value)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func advance() {
+        guard page < visualPageCount - 1 else {
+            finish()
+            return
+        }
         if reduceMotion {
             page += 1
         } else {
             withAnimation(AppAnimation.standard) { page += 1 }
         }
+    }
+
+    private func finish() {
+        env.library.completeOnboarding(genres: [])
+    }
+}
+
+private struct ReviewPhoto: View {
+    let folder: String
+    let name: String
+
+    var body: some View {
+        Group {
+            if let image = ReviewImages.image(folder: folder, name: name) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AppColors.elevated
+            }
+        }
+        .clipped()
     }
 }
 

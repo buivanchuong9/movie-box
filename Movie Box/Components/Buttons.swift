@@ -11,6 +11,7 @@ struct PrimaryButtonLabel: View {
             }
             Text(title)
                 .lineLimit(1)
+                .minimumScaleFactor(0.72)
         }
         .font(AppTypography.button)
         .foregroundStyle(AppColors.onAccent)
@@ -47,7 +48,7 @@ struct SecondaryButtonLabel: View {
             }
             Text(title)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.72)
         }
         .font(AppTypography.button)
         .foregroundStyle(AppColors.textPrimary)

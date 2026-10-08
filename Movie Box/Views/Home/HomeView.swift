@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppEnvironment.self) private var env
+    @State private var showImporter = false
 
     private var signals: RecommendationSignals {
         env.library.signals(isPremium: env.entitlements.isPremium)
@@ -14,6 +15,7 @@ struct HomeView: View {
         }
         .background(AppColors.background)
         .toolbar(.hidden, for: .navigationBar)
+        .movieImporter(isPresented: $showImporter)
         .task {
             await env.home.loadIfNeeded(signals: signals)
         }
@@ -36,6 +38,9 @@ struct HomeView: View {
 
             Spacer()
 
+            IconCircleButton(systemImage: "plus", label: "Import movies") {
+                showImporter = true
+            }
             IconCircleButton(systemImage: "magnifyingglass", label: "Search") {
                 env.tabs.select(.search)
             }
@@ -64,13 +69,13 @@ struct HomeView: View {
                 }
                 .padding(.top, AppSpacing.sm)
             }
-        } else if env.home.needsAPIKey {
+        } else if !env.home.hasContent {
             EmptyStateView(
-                systemImage: "film",
-                title: "Movie data is unavailable",
-                message: "Movie data is unavailable right now.",
-                actionTitle: "Try Again",
-                action: { Task { await env.home.reload(signals: signals) } }
+                systemImage: "photo.on.rectangle.angled",
+                title: "Add your movies",
+                message: "Import posters from your photo library or from image files. Nothing is loaded from the internet.",
+                actionTitle: "Import",
+                action: { showImporter = true }
             )
         } else if let message = env.home.errorMessage, !env.home.hasContent {
             if !env.network.isOnline {
@@ -96,18 +101,24 @@ struct HomeView: View {
                     if !env.home.forYou.isEmpty {
                         PosterCarousel(title: "For You", items: env.home.forYou, seeAll: CatalogQuery(title: "For You", source: .forYou, genreID: env.library.preferences.favoriteGenreIDs.first))
                     }
-                    PosterCarousel(title: "Trending Now", items: env.home.trending, seeAll: CatalogQuery(title: "Trending Now", source: .trending))
-                    if !env.home.trendingForYou.isEmpty {
-                        PosterCarousel(title: "Trending For You", items: env.home.trendingForYou, seeAll: nil)
+                    if !env.home.popular.isEmpty {
+                        PosterCarousel(title: "Your Movies", items: env.home.popular, seeAll: CatalogQuery(title: "Your Movies", source: .popular))
                     }
-                    PosterCarousel(title: "Popular Movies", items: env.home.popular, seeAll: CatalogQuery(title: "Popular Movies", source: .popular))
-                    if env.ads.showsInline(sectionIndex: 3) {
+                    if env.ads.showsInline(sectionIndex: 3), env.home.hasContent {
                         AdInlineCard()
                     }
-                    PosterCarousel(title: "Popular TV Shows", items: env.home.popularTV, seeAll: CatalogQuery(title: "Popular TV Shows", source: .popularTV))
-                    PosterCarousel(title: "New Releases", items: env.home.nowPlaying, seeAll: CatalogQuery(title: "New Releases", source: .nowPlaying))
-                    PosterCarousel(title: "Upcoming", items: env.home.upcoming, seeAll: CatalogQuery(title: "Upcoming", source: .upcoming))
-                    PosterCarousel(title: "Top Rated", items: env.home.topRated, seeAll: CatalogQuery(title: "Top Rated", source: .topRated))
+                    if !env.home.popularTV.isEmpty {
+                        PosterCarousel(title: "Popular TV Shows", items: env.home.popularTV, seeAll: CatalogQuery(title: "Popular TV Shows", source: .popularTV))
+                    }
+                    if !env.home.nowPlaying.isEmpty {
+                        PosterCarousel(title: "New Releases", items: env.home.nowPlaying, seeAll: CatalogQuery(title: "New Releases", source: .nowPlaying))
+                    }
+                    if !env.home.upcoming.isEmpty {
+                        PosterCarousel(title: "Upcoming", items: env.home.upcoming, seeAll: CatalogQuery(title: "Upcoming", source: .upcoming))
+                    }
+                    if !env.home.topRated.isEmpty {
+                        PosterCarousel(title: "Top Rated", items: env.home.topRated, seeAll: CatalogQuery(title: "Top Rated", source: .topRated))
+                    }
                     if env.entitlements.isPremium, !env.home.becauseYouWatched.isEmpty {
                         PosterCarousel(title: "Because You Watched \(env.home.becauseTitle)", items: env.home.becauseYouWatched, seeAll: nil)
                     }

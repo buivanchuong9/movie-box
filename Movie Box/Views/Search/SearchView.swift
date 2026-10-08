@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchView: View {
     @Environment(AppEnvironment.self) private var env
+    @State private var showImporter = false
     @State private var showFilters = false
     @State private var showSort = false
     @State private var showPremium = false
@@ -54,7 +55,7 @@ struct SearchView: View {
                     EmptyStateView(
                         systemImage: "magnifyingglass",
                         title: "No matches",
-                        message: "Try a different title, person, or filter."
+                        message: "Try another title from the movies you imported."
                     )
                 } else {
                     results
@@ -65,6 +66,7 @@ struct SearchView: View {
         .background(AppColors.background)
         .toolbar(.hidden, for: .navigationBar)
         .scrollDismissesKeyboard(.immediately)
+        .movieImporter(isPresented: $showImporter)
         .task { await env.searchModel.loadTrendingIfNeeded() }
         .sheet(isPresented: $showFilters) {
             FilterSheet(
@@ -139,15 +141,25 @@ struct SearchView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Trending")
-                        .font(AppTypography.section)
-                        .foregroundStyle(AppColors.textPrimary)
-                    FlowLayout(spacing: AppSpacing.xs) {
-                        ForEach(env.searchModel.trending.prefix(8)) { media in
-                            GenreChip(title: media.title) {
-                                env.searchModel.updateQuery(media.title)
-                                env.library.addSearch(media.title)
+                if env.searchModel.trending.isEmpty {
+                    EmptyStateView(
+                        systemImage: "photo.on.rectangle.angled",
+                        title: "Add your movies",
+                        message: "Import posters from your photo library or from image files.",
+                        actionTitle: "Import",
+                        action: { showImporter = true }
+                    )
+                } else {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Your Movies")
+                            .font(AppTypography.section)
+                            .foregroundStyle(AppColors.textPrimary)
+                        FlowLayout(spacing: AppSpacing.xs) {
+                            ForEach(env.searchModel.trending.prefix(8)) { media in
+                                GenreChip(title: media.title) {
+                                    env.searchModel.updateQuery(media.title)
+                                    env.library.addSearch(media.title)
+                                }
                             }
                         }
                     }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiscoverView: View {
     @Environment(AppEnvironment.self) private var env
+    @State private var showImporter = false
     @State private var showFilters = false
     @State private var showPremium = false
     @State private var draft = MediaFilters()
@@ -14,6 +15,23 @@ struct DiscoverView: View {
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, AppSpacing.sm)
                 .accessibilityAddTraits(.isHeader)
+
+            HStack {
+                Spacer()
+                Button {
+                    showImporter = true
+                } label: {
+                    Label("Import", systemImage: "plus")
+                        .font(AppTypography.captionBold)
+                        .foregroundStyle(AppColors.onAccent)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 36)
+                        .background(AppColors.accentFill, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, AppSpacing.page)
+                .padding(.bottom, AppSpacing.sm)
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.xs) {
@@ -73,9 +91,11 @@ struct DiscoverView: View {
                     }
                 } else if env.discover.items.isEmpty {
                     EmptyStateView(
-                        systemImage: "film",
-                        title: "No titles match",
-                        message: "Try another genre, year, or sort."
+                        systemImage: "photo.on.rectangle.angled",
+                        title: "No movies yet",
+                        message: "Import posters from your photo library or from image files.",
+                        actionTitle: "Import",
+                        action: { showImporter = true }
                     )
                 } else {
                     MediaGrid(items: env.discover.items, showsAds: true) {
@@ -93,6 +113,7 @@ struct DiscoverView: View {
             }
         }
         .refreshable { await env.discover.reload() }
+        .movieImporter(isPresented: $showImporter)
         .task { await env.discover.loadIfNeeded() }
         .sheet(isPresented: $showFilters) {
             FilterSheet(

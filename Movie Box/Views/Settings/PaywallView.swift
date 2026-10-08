@@ -4,6 +4,7 @@ struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.openURL) private var openURL
     var embedded = false
+    var required = false
     @State private var model: PaywallViewModel?
 
     var body: some View {
@@ -41,6 +42,7 @@ struct PaywallView: View {
         .navigationTitle("Lumen Plus")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(embedded ? .automatic : .hidden, for: .navigationBar)
+        .interactiveDismissDisabled(required)
         .task {
             if model == nil {
                 model = PaywallViewModel(store: env.store, entitlements: env.entitlements)
@@ -93,7 +95,7 @@ struct PaywallView: View {
             Text("Lumen Plus")
                 .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
-            Text("Get more from your movie discovery experience.")
+            Text(required ? "Choose a plan to use Movie Box." : "Get more from your movie discovery experience.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

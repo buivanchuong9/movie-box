@@ -6,6 +6,7 @@ import SwiftData
 @Observable
 final class AppEnvironment {
     let client: APIClient
+    let imports: ImportLibrary
     let movies: any MovieServiceProtocol
     let tv: any TVServiceProtocol
     let search: any SearchServiceProtocol
@@ -49,16 +50,18 @@ final class AppEnvironment {
         library = LibraryRepository(context: container.mainContext)
         client = APIClient()
         client.contentLanguage = library.preferences.contentLanguage
+        let imported = ImportLibrary()
+        imports = imported
         if preview {
             movies = PreviewMovieService()
             tv = PreviewTVService()
             search = PreviewSearchService()
             people = PreviewPersonService()
         } else {
-            movies = MovieService(client: client)
-            tv = TVService(client: client)
-            search = SearchService(client: client)
-            people = PersonService(client: client)
+            movies = LocalMovieService(library: imported)
+            tv = LocalTVService()
+            search = LocalSearchService(library: imported)
+            people = LocalPersonService()
         }
         images = ImageService()
         trailers = TrailerService()
@@ -76,6 +79,20 @@ final class AppEnvironment {
         if !preview {
             storeKit.start()
         }
+    }
+
+    func importImages(_ images: [(title: String, data: Data)]) async {
+        for image in images {
+            imports.add(title: image.title, imageData: image.data)
+        }
+        await refreshImportedContent()
+    }
+
+    private func refreshImportedContent() async {
+        let signals = library.signals(isPremium: entitlements.isPremium)
+        await home.reload(signals: signals)
+        await discover.reload()
+        await searchModel.reloadTrending()
     }
 
     func applyLanguage() {

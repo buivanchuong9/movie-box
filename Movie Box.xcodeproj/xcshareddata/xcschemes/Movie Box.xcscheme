@@ -50,7 +50,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../Movie Box/Resources/LumenPlus.storekit">
+         identifier = "Movie Box/Resources/LumenPlus.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

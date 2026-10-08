@@ -45,10 +45,12 @@ struct TVDetailView: View {
                                     PrimaryButtonLabel(title: "Watch Trailer", systemImage: "play.fill")
                                 }
                                 .buttonStyle(PressScaleStyle())
+                                .frame(maxWidth: .infinity)
                             }
                             WatchlistButton(isSaved: env.library.watchlistKeys.contains(show.summary.libraryKey), prominent: true) {
                                 env.library.toggleWatchlist(show.summary)
                             }
+                            .frame(maxWidth: .infinity)
                         }
                         WorthWatchingPanel(average: show.voteAverage, voteCount: show.voteCount)
                         Text(show.overview.isEmpty ? "No overview has been published." : show.overview)
@@ -77,6 +79,7 @@ struct TVDetailView: View {
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, AppSpacing.xxl)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .ignoresSafeArea(edges: .top)
             .overlay(alignment: .top) {

@@ -9,7 +9,7 @@ struct RootView: View {
             if !env.library.preferences.hasCompletedOnboarding {
                 OnboardingView()
             } else if !env.entitlements.isPremium {
-                PaywallView()
+                PaywallView(required: true)
             } else {
                 RootTabView()
             }

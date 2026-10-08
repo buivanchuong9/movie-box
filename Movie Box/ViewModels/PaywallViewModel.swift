@@ -60,21 +60,27 @@ final class PaywallViewModel {
         switch outcome {
         case .loaded:
             phase = .ready
-            if selectedPlan == nil, let first = plans.first {
-                selectedKind = first.kind
-            }
-            if !plans.contains(where: { $0.kind == selectedKind }), let first = plans.first {
-                selectedKind = first.kind
-            }
+            statusText = nil
+            alignSelection()
         case .empty:
-            phase = .unavailable
-            statusText = "Lumen Plus isn't available right now."
+            phase = plans.isEmpty ? .unavailable : .ready
+            statusText = plans.isEmpty ? "Lumen Plus isn't available right now." : nil
         case .network:
-            phase = .network
-            statusText = "Purchases couldn't be reached. Check your connection and try again."
+            if plans.isEmpty {
+                phase = .network
+                statusText = "Purchases couldn't be reached. Check your connection and try again."
+            } else {
+                phase = .ready
+                statusText = nil
+            }
         case .failed:
-            phase = .failed
-            statusText = "Purchases couldn't be loaded. Please try again."
+            if plans.isEmpty {
+                phase = .failed
+                statusText = "Plans couldn't be loaded. Please try again."
+            } else {
+                phase = .ready
+                statusText = nil
+            }
         }
     }
 
@@ -87,7 +93,16 @@ final class PaywallViewModel {
     }
 
     func purchaseSelected() async {
-        guard let plan = selectedPlan, let product = store.product(for: plan.kind) else { return }
+        guard let plan = selectedPlan else { return }
+        if store.product(for: plan.kind) == nil {
+            _ = await store.loadProducts()
+            rebuildPlans()
+        }
+        guard let product = store.product(for: plan.kind) else {
+            phase = .failed
+            statusText = "This plan couldn't be purchased yet. Please try again."
+            return
+        }
         if entitlements.alreadyIncludes(plan.kind) {
             phase = .alreadyPurchased
             statusText = "Lumen Plus is already active on this Apple ID."
@@ -135,6 +150,15 @@ final class PaywallViewModel {
 
     func manageSubscription() async {
         await store.showManageSubscriptions()
+    }
+
+    private func alignSelection() {
+        if selectedPlan == nil, let first = plans.first {
+            selectedKind = first.kind
+        }
+        if !plans.contains(where: { $0.kind == selectedKind }), let first = plans.first {
+            selectedKind = first.kind
+        }
     }
 
     private func rebuildPlans() {

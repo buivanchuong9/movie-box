@@ -11,15 +11,18 @@ struct CinematicHero: View {
             if items.isEmpty {
                 HeroSkeleton()
             } else {
-                TabView(selection: $index) {
-                    ForEach(Array(items.enumerated()), id: \.element.libraryKey) { offset, media in
-                        heroPage(media)
-                            .tag(offset)
-                            .padding(.horizontal, AppSpacing.page)
+                GeometryReader { proxy in
+                    TabView(selection: $index) {
+                        ForEach(Array(items.enumerated()), id: \.element.libraryKey) { offset, media in
+                            heroPage(media)
+                                .frame(width: max(proxy.size.width - AppSpacing.page * 2, 0))
+                                .tag(offset)
+                        }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 500)
+                .frame(height: 460)
                 .task(id: index) {
                     guard items.count > 1, !reduceMotion else { return }
                     try? await Task.sleep(for: .seconds(5.5))
@@ -83,8 +86,7 @@ struct CinematicHero: View {
                 Text(media.overview)
                     .font(AppTypography.callout)
                     .foregroundStyle(Color.white.opacity(0.88))
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
 
                 HStack(spacing: AppSpacing.sm) {
                     NavigationLink(value: AppRoute.media(media)) {
@@ -92,13 +94,16 @@ struct CinematicHero: View {
                     }
                     .simultaneousGesture(TapGesture().onEnded { MediaMemory.shared.store(media) })
                     .buttonStyle(PressScaleStyle())
+                    .frame(maxWidth: .infinity)
 
                     WatchlistButton(isSaved: saved, prominent: true) {
                         env.library.toggleWatchlist(media)
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous))
         .overlay {

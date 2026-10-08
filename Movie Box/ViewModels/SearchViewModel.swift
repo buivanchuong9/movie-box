@@ -27,6 +27,10 @@ final class SearchViewModel {
 
     func loadTrendingIfNeeded() async {
         guard trending.isEmpty else { return }
+        await reloadTrending()
+    }
+
+    func reloadTrending() async {
         trending = (try? await search.trendingTitles(page: 1)) ?? []
     }
 

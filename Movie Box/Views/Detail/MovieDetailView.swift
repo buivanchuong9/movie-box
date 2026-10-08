@@ -82,6 +82,7 @@ struct MovieDetailView: View {
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, AppSpacing.xxl)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .ignoresSafeArea(edges: .top)
             .overlay(alignment: .top) { topBar(movie) }
@@ -142,12 +143,14 @@ struct MovieDetailView: View {
                     PrimaryButtonLabel(title: "Watch Trailer", systemImage: "play.fill")
                 }
                 .buttonStyle(PressScaleStyle())
+                .frame(maxWidth: .infinity)
                 .accessibilityHint("Opens the official trailer")
             }
 
             WatchlistButton(isSaved: env.library.watchlistKeys.contains(summary.libraryKey), prominent: true) {
                 env.library.toggleWatchlist(summary)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -212,7 +215,9 @@ struct MovieDetailView: View {
                 }
                 .padding(.horizontal, AppSpacing.page)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, -AppSpacing.page)
     }
 
