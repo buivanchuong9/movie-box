@@ -21,14 +21,8 @@ struct LibraryView: View {
                 OfflineView()
             }
 
-            Picker("Collection", selection: $segment) {
-                ForEach(LibrarySegment.allCases) { item in
-                    Text(item.title).tag(item)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, AppSpacing.page)
-            .accessibilityLabel("Collection")
+            CollectionPicker(segment: $segment)
+                .padding(.horizontal, AppSpacing.page)
 
             let items = currentItems
             if items.isEmpty {
@@ -69,15 +63,55 @@ struct LibraryView: View {
         switch segment {
         case .watchlist: "Your watchlist is empty"
         case .favorites: "No favorites yet"
-        case .watched: "Nothing marked watched"
+        case .watched: "No watched movies yet"
         }
     }
 
     private var emptyMessage: String {
         switch segment {
-        case .watchlist: "Save titles you want to come back to."
-        case .favorites: "Heart a movie to keep it in this collection."
-        case .watched: "Mark a title watched and it stays here."
+        case .watchlist: "Save movies you want to come back to."
+        case .favorites: "Save movies you want to keep close."
+        case .watched: "Mark a movie as watched to see it here."
         }
+    }
+}
+
+private struct CollectionPicker: View {
+    @Binding var segment: LibrarySegment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xxs) {
+            ForEach(LibrarySegment.allCases) { item in
+                let selected = segment == item
+                Button {
+                    if reduceMotion {
+                        segment = item
+                    } else {
+                        withAnimation(AppAnimation.quick) { segment = item }
+                    }
+                    Haptics.selection()
+                } label: {
+                    Text(item.title)
+                        .font(AppTypography.captionBold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .foregroundStyle(selected ? AppColors.onAccent : AppColors.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .padding(.horizontal, AppSpacing.xs)
+                        .background(selected ? AppColors.accentFill : Color.clear, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(AppSpacing.xxs)
+        .background(AppColors.surface, in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(AppColors.border, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Collection")
     }
 }

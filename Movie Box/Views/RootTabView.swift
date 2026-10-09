@@ -82,7 +82,7 @@ struct RootTabView: View {
                     .tag(AppTab.library)
             }
             .tint(AppColors.accent)
-            .toolbarBackground(AppColors.background, for: .tabBar)
+            .toolbarBackground(AppColors.surface, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         }
     }

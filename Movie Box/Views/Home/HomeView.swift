@@ -22,21 +22,27 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        HStack(spacing: AppSpacing.sm) {
-            HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
                 Image("AppLogo")
                     .resizable()
-                    .frame(width: 28, height: 28)
-                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                Text("Movie Box")
-                    .font(AppTypography.wordmark)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Movie Box")
+                        .font(AppTypography.wordmark)
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text("On this device")
+                        .font(AppTypography.captionBold)
+                        .foregroundStyle(AppColors.accent)
+                        .lineLimit(1)
+                }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Movie Box")
+            .accessibilityLabel("Movie Box, stored on this device")
             .accessibilityAddTraits(.isHeader)
 
-            Spacer()
+            Spacer(minLength: AppSpacing.sm)
 
             if env.home.hasContent {
                 IconCircleButton(systemImage: "plus", label: "Import movies") {
@@ -51,13 +57,13 @@ struct HomeView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(AppColors.textPrimary)
                     .frame(width: AppSpacing.touch, height: AppSpacing.touch)
-                    .background(AppColors.surface, in: Circle())
-                    .overlay { Circle().strokeBorder(AppColors.separator, lineWidth: 1) }
+                    .background(AppColors.surfaceElevated, in: Circle())
+                    .overlay { Circle().strokeBorder(AppColors.border, lineWidth: 1) }
             }
             .accessibilityLabel("Settings")
         }
         .padding(.horizontal, AppSpacing.page)
-        .padding(.bottom, AppSpacing.xs)
+        .padding(.vertical, AppSpacing.xs)
     }
 
     @ViewBuilder
@@ -73,10 +79,10 @@ struct HomeView: View {
             }
         } else if !env.home.hasContent {
             EmptyStateView(
-                systemImage: "film.stack",
-                title: "Build your movie shelf",
-                message: "Import posters to start a private movie library. Nothing is loaded from the internet.",
-                actionTitle: "Import Movies",
+                systemImage: "photo.on.rectangle.angled",
+                title: "Start your movie collection",
+                message: "Movie Box is a private library on this device. Import a poster from Photos or Files, and the title stays here.",
+                actionTitle: "Import Movie Poster",
                 action: { showImporter = true }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -177,9 +183,9 @@ struct HomeView: View {
     private var shelfLine: String {
         let count = env.imports.movies.count
         switch count {
-        case 0: return "Your private movie library"
-        case 1: return "1 title in your movie library"
-        default: return "\(count) titles in your movie library"
+        case 0: return "Your private library, stored on this device"
+        case 1: return "1 title, stored on this device"
+        default: return "\(count) titles, stored on this device"
         }
     }
 
@@ -204,10 +210,12 @@ struct HomeView: View {
                             Text(genre.name)
                                 .font(AppTypography.captionBold)
                                 .foregroundStyle(AppColors.textPrimary)
-                                .padding(.horizontal, 14)
-                                .frame(minHeight: 36)
-                                .background(AppColors.elevated, in: Capsule())
-                                .overlay { Capsule().strokeBorder(AppColors.separator, lineWidth: 1) }
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.horizontal, AppSpacing.md)
+                                .frame(minHeight: AppSpacing.touch)
+                                .background(AppColors.surface, in: Capsule())
+                                .overlay { Capsule().strokeBorder(AppColors.border, lineWidth: 1) }
                         }
                         .buttonStyle(.plain)
                     }

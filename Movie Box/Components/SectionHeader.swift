@@ -48,11 +48,13 @@ struct GenreChip: View {
             Text(title)
                 .font(AppTypography.captionBold)
                 .foregroundStyle(isSelected ? AppColors.onAccent : AppColors.textPrimary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, AppSpacing.md)
                 .frame(minHeight: AppSpacing.touch)
-                .background(isSelected ? AppColors.accentFill : AppColors.elevated, in: Capsule())
+                .background(isSelected ? AppColors.accentFill : AppColors.surface, in: Capsule())
                 .overlay {
-                    Capsule().strokeBorder(isSelected ? Color.clear : AppColors.separator, lineWidth: 1)
+                    Capsule().strokeBorder(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
                 }
         }
         .buttonStyle(PressScaleStyle())

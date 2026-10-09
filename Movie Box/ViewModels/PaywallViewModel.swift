@@ -9,6 +9,8 @@ struct PaywallPlan: Identifiable, Equatable {
     let displayPrice: String
     let priceLine: String
     let billingNote: String
+    /// Billing period shown beside `displayPrice`. The price string itself is never split.
+    let periodCaption: String
     let savingsText: String?
 }
 
@@ -188,8 +190,69 @@ final class PaywallViewModel {
                 displayPrice: product.displayPrice,
                 priceLine: priceLine,
                 billingNote: billingNote,
+                periodCaption: Self.periodCaption(kind: kind, suffix: suffix),
                 savingsText: savingsText
             )
         }
     }
+
+    /// Period copy stays separate from `Product.displayPrice` so currency formatting is never reconstructed.
+    private static func periodCaption(kind: LumenPlanKind, suffix: String?) -> String {
+        if kind == .lifetime {
+            return "One-time"
+        }
+        if let suffix, !suffix.isEmpty {
+            return "/\(suffix)"
+        }
+        return kind == .monthly ? "/month" : "/year"
+    }
 }
+
+#if DEBUG
+extension PaywallViewModel {
+    /// Layout fixture only. Prices are not product prices and are never shown in release.
+    static func layoutPreview(
+        selected: LumenPlanKind,
+        prices: (String, String, String) = ("¤12", "¤48", "¤70"),
+        savings: String? = "Save 48%"
+    ) -> PaywallViewModel {
+        let environment = AppEnvironment.preview
+        let model = PaywallViewModel(store: environment.store, entitlements: environment.entitlements)
+        model.phase = .ready
+        model.selectedKind = selected
+        model.plans = [
+            PaywallPlan(
+                id: LumenProductID.monthly,
+                kind: .monthly,
+                name: "Monthly",
+                displayPrice: prices.0,
+                priceLine: prices.0,
+                billingNote: "Billed monthly",
+                periodCaption: "/month",
+                savingsText: nil
+            ),
+            PaywallPlan(
+                id: LumenProductID.annual,
+                kind: .annual,
+                name: "Annual",
+                displayPrice: prices.1,
+                priceLine: prices.1,
+                billingNote: "Billed yearly",
+                periodCaption: "/year",
+                savingsText: savings
+            ),
+            PaywallPlan(
+                id: LumenProductID.lifetime,
+                kind: .lifetime,
+                name: "Lifetime",
+                displayPrice: prices.2,
+                priceLine: prices.2,
+                billingNote: "One-time purchase",
+                periodCaption: "One-time",
+                savingsText: nil
+            )
+        ]
+        return model
+    }
+}
+#endif

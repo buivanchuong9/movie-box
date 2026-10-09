@@ -6,8 +6,6 @@ struct OnboardingView: View {
     @State private var page = 0
 
     private let visualPageCount = 4
-    private let violet = Color(red: 0.20, green: 0.05, blue: 0.34)
-    private let violetDeep = Color(red: 0.10, green: 0.03, blue: 0.20)
 
     var body: some View {
         visualIntro
@@ -16,7 +14,7 @@ struct OnboardingView: View {
 
     private var visualIntro: some View {
         ZStack {
-            LinearGradient(colors: [violet, Color(red: 0.33, green: 0.08, blue: 0.46), violetDeep], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppColors.background, AppColors.surfaceElevated.opacity(0.65), AppColors.background], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
             Group {
@@ -34,7 +32,7 @@ struct OnboardingView: View {
                     Spacer()
                     Button("Skip") { finish() }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.82))
+                        .foregroundStyle(AppColors.textSecondary)
                         .frame(minHeight: 44)
                 }
                 .padding(.horizontal, 22)
@@ -46,7 +44,7 @@ struct OnboardingView: View {
                 HStack(spacing: 7) {
                     ForEach(0..<visualPageCount, id: \.self) { index in
                         Capsule()
-                            .fill(index == page ? Color.white : Color.white.opacity(0.35))
+                            .fill(index == page ? AppColors.accent : AppColors.textTertiary)
                             .frame(width: index == page ? 18 : 6, height: 6)
                     }
                 }
@@ -54,17 +52,16 @@ struct OnboardingView: View {
                 Button(action: advance) {
                     Text(page == visualPageCount - 1 ? "See Plans" : "Continue")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(violetDeep)
+                        .foregroundStyle(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(.white, in: Capsule())
+                        .frame(minHeight: AppSpacing.touch)
+                        .background(AppColors.accentFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 18)
         }
-        .preferredColorScheme(.dark)
     }
 
     private var genrePage: some View {
@@ -77,15 +74,14 @@ struct OnboardingView: View {
                     Text("Every Genre")
                         .font(.system(size: 36, weight: .bold, design: .serif))
                 }
-                .foregroundStyle(.white)
-                .shadow(color: violetDeep.opacity(0.55), radius: 16, y: 6)
+                .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 72)
                 Spacer()
                 HStack(alignment: .bottom) {
                     Image(systemName: "film.stack")
                         .font(.system(size: 54, weight: .light))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.accent)
                         .accessibilityHidden(true)
                     Spacer()
                     VStack(alignment: .trailing, spacing: -4) {
@@ -94,7 +90,7 @@ struct OnboardingView: View {
                         Text("Movies")
                             .font(.system(size: 26, weight: .semibold, design: .serif))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                 }
                 .padding(.horizontal, 22)
                 .padding(.bottom, 8)
@@ -131,7 +127,7 @@ struct OnboardingView: View {
                 .padding(.top, 36)
             Text("Discover\nTrending Movies")
                 .font(.system(size: 36, weight: .bold, design: .serif))
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 0)
@@ -147,12 +143,12 @@ struct OnboardingView: View {
                 Spacer()
                 Image(systemName: "magnifyingglass")
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(AppColors.textPrimary)
             .padding(.horizontal, 12)
             .padding(.top, 14)
             HStack(spacing: 16) {
-                Text("Movies").font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
-                Text("TV Shows").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.45))
+                Text("Movies").font(.system(size: 13, weight: .bold)).foregroundStyle(AppColors.accent)
+                Text("TV Shows").font(.system(size: 13, weight: .semibold)).foregroundStyle(AppColors.textTertiary)
                 Spacer()
             }
             .padding(.horizontal, 12)
@@ -161,11 +157,11 @@ struct OnboardingView: View {
             phoneRow("New Releases", ReviewImages.fresh, titles: ["Dune", "Oppenheimer", "Spider-Man"])
             Spacer(minLength: 0)
         }
-        .background(Color(red: 0.07, green: 0.06, blue: 0.12))
+        .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                .strokeBorder(AppColors.border, lineWidth: 1)
         }
     }
 
@@ -173,7 +169,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .padding(.horizontal, 12)
             HStack(spacing: 8) {
                 ForEach(Array(names.enumerated()), id: \.offset) { index, name in
@@ -184,7 +180,7 @@ struct OnboardingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         Text(titles[index])
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -198,7 +194,7 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Text("All Your\nFavorite Actors")
                 .font(.system(size: 36, weight: .bold, design: .serif))
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 64)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 4), spacing: 16) {
@@ -209,7 +205,7 @@ struct OnboardingView: View {
                             .clipShape(Circle())
                         Text(actor.name)
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(AppColors.textSecondary)
                             .lineLimit(2)
                             .multilineTextAlignment(.center)
                             .frame(height: 24)
@@ -225,7 +221,7 @@ struct OnboardingView: View {
         VStack(spacing: 14) {
             Text("Explore\nMovie Details")
                 .font(.system(size: 34, weight: .bold, design: .serif))
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 56)
             VStack(alignment: .leading, spacing: 10) {
@@ -235,10 +231,10 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 Text("Dune")
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                 Text("A gifted heir travels to a desert planet and finds that survival, prophecy, and empire are the same fight.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(3)
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     detailFact("Status", "Released")
@@ -248,7 +244,7 @@ struct OnboardingView: View {
                 }
             }
             .padding(14)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .padding(.horizontal, 22)
             Spacer(minLength: 0)
         }
@@ -258,14 +254,14 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(AppColors.textTertiary)
             Text(value)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func advance() {

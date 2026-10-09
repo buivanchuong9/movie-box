@@ -16,6 +16,17 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            Section("Library") {
+                Picker("Language", selection: languageBinding) {
+                    ForEach(LanguageOption.content) { language in
+                        Text(language.name).tag(language.code)
+                    }
+                }
+                .listRowBackground(AppColors.surface)
+                NavigationLink(value: AppRoute.statistics) { Text("Statistics") }
+                    .listRowBackground(AppColors.surface)
+            }
+
             Section("Appearance") {
                 Picker("Appearance", selection: appearanceBinding) {
                     ForEach(AppearancePreference.allCases) { option in
@@ -23,15 +34,6 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .listRowBackground(AppColors.surface)
-            }
-
-            Section("Content Language") {
-                Picker("Language", selection: languageBinding) {
-                    ForEach(LanguageOption.content) { language in
-                        Text(language.name).tag(language.code)
-                    }
-                }
                 .listRowBackground(AppColors.surface)
             }
 
@@ -44,37 +46,54 @@ struct SettingsView: View {
                         .foregroundStyle(AppColors.textSecondary)
                         .listRowBackground(AppColors.surface)
                 }
+            } header: {
+                Text("Notifications")
             } footer: {
-                Text("Lumen only stores this preference on your device. It does not send a digest from a server.")
+                Text("This preference stays on your device. Movie Box does not send a digest from a server.")
             }
 
-            legalRow("Privacy", url: LegalConfiguration.privacyURL, document: .privacy)
-            legalRow("Terms", url: LegalConfiguration.termsURL, document: .terms)
-            NavigationLink(value: AppRoute.legal(.about)) { Text("About") }
-                .listRowBackground(AppColors.surface)
-            Button("Rate Movie Box") { rateApp() }
-                .listRowBackground(AppColors.surface)
-
-            NavigationLink(value: AppRoute.premium) { Text("Lumen Plus") }
-                .listRowBackground(AppColors.surface)
-            Button("Restore Purchases") {
-                Task { restoreMessage = await restorePurchases() }
-            }
-            .listRowBackground(AppColors.surface)
-            if let restoreMessage {
-                Text(restoreMessage)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .listRowBackground(AppColors.surface)
-            }
-            if env.entitlements.current.canManageSubscription {
-                Button("Manage Subscription") {
-                    Task { await env.store.showManageSubscriptions() }
+            Section("Lumen Plus") {
+                NavigationLink(value: AppRoute.premium) {
+                    HStack {
+                        Text("Lumen Plus")
+                        Spacer(minLength: AppSpacing.sm)
+                        if env.entitlements.isPremium {
+                            Text("Active")
+                                .font(AppTypography.captionBold)
+                                .foregroundStyle(AppColors.accent)
+                        }
+                    }
                 }
                 .listRowBackground(AppColors.surface)
-            }
-            NavigationLink(value: AppRoute.statistics) { Text("Statistics") }
+                Button("Restore Purchases") {
+                    Task { restoreMessage = await restorePurchases() }
+                }
                 .listRowBackground(AppColors.surface)
+                if let restoreMessage {
+                    Text(restoreMessage)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .listRowBackground(AppColors.surface)
+                }
+                if env.entitlements.current.canManageSubscription {
+                    Button("Manage Subscription") {
+                        Task { await env.store.showManageSubscriptions() }
+                    }
+                    .listRowBackground(AppColors.surface)
+                }
+            }
+
+            Section("Privacy") {
+                legalRow("Privacy", url: LegalConfiguration.privacyURL, document: .privacy)
+                legalRow("Terms", url: LegalConfiguration.termsURL, document: .terms)
+            }
+
+            Section("Support") {
+                NavigationLink(value: AppRoute.legal(.about)) { Text("About") }
+                    .listRowBackground(AppColors.surface)
+                Button("Rate Movie Box") { rateApp() }
+                    .listRowBackground(AppColors.surface)
+            }
 
             #if DEBUG
             Section {
@@ -94,6 +113,7 @@ struct SettingsView: View {
             .listRowBackground(AppColors.surface)
             #endif
         }
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .lumenColumn(maxWidth: 720)
         .background(AppColors.background)

@@ -136,7 +136,7 @@ struct DiscoverView: View {
                 systemImage: "film.stack",
                 title: "Nothing to discover yet",
                 message: "Import a few posters and your film library will show up here.",
-                actionTitle: "Import Movies",
+                actionTitle: "Import Movie Poster",
                 action: { showImporter = true }
             )
         } else {

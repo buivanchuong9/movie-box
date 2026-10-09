@@ -7,7 +7,7 @@ struct MediaGrid: View {
     var onNearEnd: () -> Void = {}
 
     private func columns(for width: CGFloat) -> [GridItem] {
-        let count = max(2, Int(width / 160))
+        let count = max(2, Int(width / 156))
         return Array(repeating: GridItem(.flexible(), spacing: AppSpacing.sm), count: min(count, 6))
     }
 
@@ -46,5 +46,7 @@ struct MediaGrid: View {
                 .padding(.bottom, AppSpacing.xl)
             }
         }
+        .frame(maxWidth: 1080)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

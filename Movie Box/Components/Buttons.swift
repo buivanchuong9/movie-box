@@ -10,16 +10,18 @@ struct PrimaryButtonLabel: View {
                 Image(systemName: systemImage)
             }
             Text(title)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
         }
         .font(AppTypography.button)
         .foregroundStyle(AppColors.onAccent)
         .frame(maxWidth: .infinity)
         .frame(minHeight: AppSpacing.touch)
         .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.xs)
         .background(AppColors.accentFill)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .accessibilityLabel(title)
     }
 }
@@ -47,8 +49,9 @@ struct SecondaryButtonLabel: View {
                 Image(systemName: systemImage)
             }
             Text(title)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
         }
         .font(AppTypography.button)
         .foregroundStyle(AppColors.textPrimary)
@@ -56,10 +59,10 @@ struct SecondaryButtonLabel: View {
         .frame(minHeight: AppSpacing.touch)
         .padding(.horizontal, AppSpacing.md)
         .background(Color.clear)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .strokeBorder(AppColors.textTertiary.opacity(0.7), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1)
         }
         .accessibilityLabel(title)
     }
@@ -145,35 +148,53 @@ struct LibraryActions: View {
         let listed = env.library.watchlistKeys.contains(key)
         let favorite = env.library.favoriteKeys.contains(key)
         let watched = env.library.watchedKeys.contains(key)
-        HStack(spacing: AppSpacing.xs) {
-            action(title: listed ? "In Watchlist" : "Watchlist", systemImage: listed ? "bookmark.fill" : "bookmark", selected: listed) {
-                env.library.toggleWatchlist(media)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: AppSpacing.xs) {
+                action(title: listed ? "In Watchlist" : "Watchlist", systemImage: listed ? "bookmark.fill" : "bookmark", selected: listed, prominent: true) {
+                    env.library.toggleWatchlist(media)
+                }
+                action(title: favorite ? "Favorited" : "Favorite", systemImage: favorite ? "heart.fill" : "heart", selected: favorite) {
+                    env.library.toggleFavorite(media)
+                }
+                action(title: "Watched", systemImage: watched ? "checkmark.circle.fill" : "checkmark.circle", selected: watched) {
+                    env.library.toggleWatched(media)
+                }
             }
-            action(title: favorite ? "Favorited" : "Favorite", systemImage: favorite ? "heart.fill" : "heart", selected: favorite) {
-                env.library.toggleFavorite(media)
-            }
-            action(title: "Watched", systemImage: watched ? "checkmark.circle.fill" : "checkmark.circle", selected: watched) {
-                env.library.toggleWatched(media)
+            VStack(spacing: AppSpacing.xs) {
+                action(title: listed ? "In Watchlist" : "Watchlist", systemImage: listed ? "bookmark.fill" : "bookmark", selected: listed, prominent: true) {
+                    env.library.toggleWatchlist(media)
+                }
+                HStack(spacing: AppSpacing.xs) {
+                    action(title: favorite ? "Favorited" : "Favorite", systemImage: favorite ? "heart.fill" : "heart", selected: favorite) {
+                        env.library.toggleFavorite(media)
+                    }
+                    action(title: "Watched", systemImage: watched ? "checkmark.circle.fill" : "checkmark.circle", selected: watched) {
+                        env.library.toggleWatched(media)
+                    }
+                }
             }
         }
     }
 
-    private func action(title: String, systemImage: String, selected: Bool, perform: @escaping () -> Void) -> some View {
-        Button(action: perform) {
+    private func action(title: String, systemImage: String, selected: Bool, prominent: Bool = false, perform: @escaping () -> Void) -> some View {
+        let filled = prominent && !selected
+        return Button(action: perform) {
             VStack(spacing: AppSpacing.xxs) {
                 Image(systemName: systemImage)
                     .font(.body.weight(.semibold))
                 Text(title)
                     .font(AppTypography.captionBold)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.center)
             }
-            .foregroundStyle(selected ? AppColors.accent : AppColors.textPrimary)
+            .foregroundStyle(filled ? AppColors.onAccent : (selected ? AppColors.accent : AppColors.textPrimary))
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .padding(.horizontal, AppSpacing.xs)
+            .background(filled ? AppColors.accentFill : (selected ? AppColors.selectedBackground : AppColors.surface), in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder(selected ? AppColors.accent.opacity(0.7) : AppColors.separator, lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .strokeBorder(filled ? Color.clear : (selected ? AppColors.accent : AppColors.border), lineWidth: selected ? 1.5 : 1)
             }
         }
         .buttonStyle(PressScaleStyle())
@@ -194,8 +215,8 @@ struct IconCircleButton: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(AppColors.textPrimary)
                 .frame(width: AppSpacing.touch, height: AppSpacing.touch)
-                .background(AppColors.surface, in: Circle())
-                .overlay { Circle().strokeBorder(AppColors.separator, lineWidth: 1) }
+                .background(AppColors.surfaceElevated, in: Circle())
+                .overlay { Circle().strokeBorder(AppColors.border, lineWidth: 1) }
         }
         .buttonStyle(PressScaleStyle())
         .accessibilityLabel(label)

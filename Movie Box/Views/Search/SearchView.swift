@@ -133,7 +133,7 @@ struct SearchView: View {
                         systemImage: "magnifyingglass",
                         title: "Search your library",
                         message: "Find a movie, show, or person in your collection.",
-                        actionTitle: env.imports.movies.isEmpty ? "Import Movies" : nil,
+                        actionTitle: env.imports.movies.isEmpty ? "Import Movie Poster" : nil,
                         action: env.imports.movies.isEmpty ? { showImporter = true } : nil
                     )
                 } else if !env.searchModel.trending.isEmpty {

@@ -10,15 +10,16 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             Image(systemName: systemImage)
-                .font(.system(size: 42, weight: .light))
+                .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(AppColors.accent)
-                .frame(width: 84, height: 84)
-                .background(AppColors.elevated, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .frame(width: 72, height: 72)
+                .background(AppColors.accentSoft, in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
                 .accessibilityHidden(true)
             Text(title)
                 .font(AppTypography.section)
                 .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             Text(message)
                 .font(AppTypography.callout)
                 .foregroundStyle(AppColors.textSecondary)
@@ -29,9 +30,15 @@ struct EmptyStateView: View {
                     .padding(.top, AppSpacing.xs)
             }
         }
-        .padding(AppSpacing.xl)
-        .frame(maxWidth: 420)
-        .frame(maxWidth: .infinity)
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: 440)
+        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1)
+        }
+        .padding(.horizontal, AppSpacing.page)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }
 

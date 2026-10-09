@@ -3,140 +3,140 @@ import SwiftUI
 struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var embedded = false
     var required = false
     @State private var model: PaywallViewModel?
 
+    init(embedded: Bool = false, required: Bool = false, model: PaywallViewModel? = nil) {
+        self.embedded = embedded
+        self.required = required
+        _model = State(initialValue: model)
+    }
+
     var body: some View {
-        ZStack(alignment: .top) {
-            background
-            VStack(spacing: 0) {
-                topBar
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        header
-                        benefits
-                        if env.entitlements.isPremium {
-                            activeBanner
-                        }
-                        if let model {
-                            plans(model)
-                            status(model)
-                        } else {
-                            ProgressView()
-                                .frame(maxWidth: .infinity, minHeight: 160)
-                        }
-                        legal
-                    }
-                    .padding(.horizontal, AppSpacing.page)
-                    .padding(.bottom, AppSpacing.xl)
-                    .lumenColumn(maxWidth: 640)
+        VStack(spacing: 0) {
+            PaywallColumn(padding: horizontalPadding) {
+                PaywallHeader(showsClose: !required, onClose: close)
+                    .padding(.top, AppSpacing.xs)
+                    .padding(.bottom, AppSpacing.xxs)
+            }
+            .layoutPriority(1)
+
+            ScrollView {
+                PaywallColumn(padding: horizontalPadding) {
+                    scrollStack
+                        .padding(.top, AppSpacing.sm)
+                        .padding(.bottom, AppSpacing.lg)
                 }
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(minHeight: 0, maxHeight: .infinity)
+
+            Group {
+                if pinsActions, let model, showsActions(model) {
+                    PaywallColumn(padding: horizontalPadding) {
+                        VStack(spacing: AppSpacing.sm) {
+                            Rectangle()
+                                .fill(PaywallColors.cardBorder)
+                                .frame(height: 1)
+                                .accessibilityHidden(true)
+                            actionBar(model)
+                        }
+                        .padding(.top, AppSpacing.xs)
+                        .padding(.bottom, AppSpacing.md)
+                    }
+                    .background(AppColors.background)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let model {
-                footer(model)
-            }
-        }
-        .background(AppColors.background)
+        .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Lumen Plus")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(embedded ? .automatic : .hidden, for: .navigationBar)
         .interactiveDismissDisabled(required)
-        .task {
-            if model == nil {
-                model = PaywallViewModel(store: env.store, entitlements: env.entitlements)
+        .task { await prepare() }
+    }
+
+    private var scrollStack: some View {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
+            PaywallHero()
+
+            if env.entitlements.isPremium, !activeText.isEmpty {
+                Text(activeText)
+                    .font(AppTypography.callout.weight(.semibold))
+                    .foregroundStyle(AppColors.positive)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if model?.phase == .loading || model?.plans.isEmpty == true {
-                await model?.load()
+
+            PaywallBenefits()
+            plansSection
+
+            if let model, !pinsActions, showsActions(model) {
+                actionBar(model)
             }
+
+            PaywallLegal()
         }
     }
 
-    private var background: some View {
-        AppColors.background
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-    }
-
-    private var topBar: some View {
-        HStack {
-            HStack(spacing: 8) {
-                Image("AppLogo")
-                    .resizable()
-                    .frame(width: 28, height: 28)
-                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                Text("Movie Box")
-                    .font(AppTypography.wordmark)
-                    .foregroundStyle(AppColors.textPrimary)
+    @ViewBuilder
+    private var plansSection: some View {
+        if let model {
+            if model.phase == .loading && model.plans.isEmpty {
+                ProgressView("Loading plans")
+                    .tint(PaywallColors.accentText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.xl)
+            } else {
+                PaywallPlanSelector(
+                    plans: model.plans,
+                    selectedKind: model.selectedKind,
+                    isEnabled: !isBusy(model),
+                    unavailableMessage: model.statusText,
+                    onSelect: { select($0, model: model) }
+                )
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Movie Box")
-            Spacer()
-            if !required {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(AppColors.textPrimary)
-                        .frame(width: AppSpacing.touch, height: AppSpacing.touch)
-                        .background(AppColors.surface, in: Circle())
-                        .overlay { Circle().strokeBorder(AppColors.separator, lineWidth: 1) }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
-            }
-        }
-        .padding(.horizontal, AppSpacing.page)
-        .padding(.top, AppSpacing.sm)
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Lumen Plus")
-                .font(AppTypography.screenTitle)
-                .foregroundStyle(AppColors.textPrimary)
-            Text(required ? "Choose a plan to use Movie Box." : "A quieter way to keep your movie library.")
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.top, AppSpacing.xs)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var benefits: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            benefit("Advanced filters")
-            benefit("Personalized recommendations")
-            benefit("Viewing statistics")
-            benefit("A premium library experience")
-        }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .strokeBorder(AppColors.separator, lineWidth: 1)
+        } else {
+            ProgressView("Loading plans")
+                .tint(PaywallColors.accentText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.xl)
         }
     }
 
-    private func benefit(_ title: String) -> some View {
-        Label(title, systemImage: "checkmark")
-            .font(AppTypography.callout)
-            .foregroundStyle(AppColors.textPrimary)
-            .labelStyle(BenefitLabelStyle())
+    private func actionBar(_ model: PaywallViewModel) -> some View {
+        PaywallActionBar(
+            title: primaryTitle(model),
+            status: statusText(model),
+            statusColor: statusColor(model.phase),
+            isBusy: isBusy(model),
+            isEnabled: primaryEnabled(model),
+            showsManage: model.showsManageSubscription,
+            onPrimary: { performPrimary(model) },
+            onRestore: { restore(model) },
+            onManage: { manage(model) }
+        )
     }
 
-    private var activeBanner: some View {
-        Text(activeText)
-            .font(AppTypography.cardTitle)
-            .foregroundStyle(AppColors.positive)
-            .fixedSize(horizontal: false, vertical: true)
+    private var horizontalPadding: CGFloat {
+        horizontalSizeClass == .regular ? AppSpacing.xl : AppSpacing.lg
+    }
+
+    private var sectionSpacing: CGFloat {
+        verticalSizeClass == .compact ? AppSpacing.md : AppSpacing.xl
+    }
+
+    private var pinsActions: Bool {
+        !dynamicTypeSize.isAccessibilitySize
     }
 
     private var activeText: String {
@@ -148,104 +148,41 @@ struct PaywallView: View {
         }
     }
 
-    @ViewBuilder
-    private func plans(_ model: PaywallViewModel) -> some View {
-        if model.phase == .loading && model.plans.isEmpty {
-            ProgressView("Loading plans")
-                .frame(maxWidth: .infinity, minHeight: 180)
-        } else if model.plans.isEmpty {
-            Text(model.statusText ?? "Lumen Plus isn't available right now.")
-                .font(AppTypography.callout)
-                .foregroundStyle(AppColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(AppSpacing.lg)
-                .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.hero, style: .continuous))
-        } else {
-            VStack(spacing: AppSpacing.sm) {
-                ForEach(model.plans) { plan in
-                    planCard(plan, model: model)
-                }
-            }
+    private func showsActions(_ model: PaywallViewModel) -> Bool {
+        !(model.plans.isEmpty && model.phase == .loading)
+    }
+
+    private func isBusy(_ model: PaywallViewModel) -> Bool {
+        switch model.phase {
+        case .purchasing, .restoring, .loading:
+            true
+        default:
+            false
         }
     }
 
-    private func planCard(_ plan: PaywallPlan, model: PaywallViewModel) -> some View {
-        let selected = model.selectedKind == plan.kind
-        let featured = plan.kind == .annual
-        return Button {
-            model.select(plan.kind)
-        } label: {
-            HStack(alignment: .center, spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: AppSpacing.xs) {
-                        Text(plan.kind.title.uppercased())
-                            .font(AppTypography.captionBold)
-                            .tracking(1.1)
-                            .foregroundStyle(selected ? AppColors.onAccent : AppColors.accent)
-                        if let savings = plan.savingsText {
-                            Text(savings.uppercased())
-                                .font(AppTypography.captionBold)
-                                .foregroundStyle(selected ? AppColors.onAccent : AppColors.accent)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(selected ? AppColors.onAccent.opacity(0.16) : AppColors.accent.opacity(0.16), in: Capsule())
-                        }
-                    }
-                    Text(plan.name)
-                        .font(AppTypography.cardTitle)
-                        .foregroundStyle(selected ? AppColors.onAccent : AppColors.textPrimary)
-                        .multilineTextAlignment(.leading)
-                    Text(plan.billingNote)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(selected ? AppColors.onAccent.opacity(0.75) : AppColors.textSecondary)
-                }
-                Spacer(minLength: AppSpacing.sm)
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(plan.displayPrice)
-                        .font(AppTypography.ratingLarge)
-                        .foregroundStyle(selected ? AppColors.onAccent : AppColors.textPrimary)
-                        .multilineTextAlignment(.trailing)
-                        .minimumScaleFactor(0.7)
-                    if let period = periodLabel(for: plan) {
-                        Text(period)
-                            .font(AppTypography.captionBold)
-                            .foregroundStyle(selected ? AppColors.onAccent.opacity(0.8) : AppColors.textTertiary)
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .padding(.vertical, AppSpacing.md)
-            .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
-            .background(selected ? AppColors.accentFill : AppColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(selected ? AppColors.accentFill : (featured ? AppColors.accent.opacity(0.45) : AppColors.separator), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(model.phase == .purchasing || model.phase == .restoring)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityLabel("\(plan.name), \(plan.priceLine), \(plan.billingNote)")
+    private func primaryEnabled(_ model: PaywallViewModel) -> Bool {
+        if isBusy(model) { return false }
+        if model.plans.isEmpty { return true }
+        return model.selectedPlan != nil
     }
 
-    private func periodLabel(for plan: PaywallPlan) -> String? {
-        guard plan.priceLine.contains(" / "), let suffix = plan.priceLine.split(separator: "/").last else { return nil }
-        let period = suffix.trimmingCharacters(in: .whitespaces)
-        guard !period.isEmpty else { return nil }
-        return "/ \(period)"
+    private func primaryTitle(_ model: PaywallViewModel) -> String {
+        if model.plans.isEmpty { return "Try Again" }
+        switch model.phase {
+        case .purchasing, .restoring, .loading:
+            return "Please wait"
+        default:
+            if let name = model.selectedPlan?.kind.title {
+                return "Continue with \(name)"
+            }
+            return "Continue"
+        }
     }
 
-    @ViewBuilder
-    private func status(_ model: PaywallViewModel) -> some View {
-        if let status = model.statusText, !model.plans.isEmpty {
-            Text(status)
-                .font(AppTypography.callout)
-                .foregroundStyle(statusColor(model.phase))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+    private func statusText(_ model: PaywallViewModel) -> String? {
+        guard !model.plans.isEmpty else { return nil }
+        return model.statusText
     }
 
     private func statusColor(_ phase: PaywallPhase) -> Color {
@@ -259,124 +196,46 @@ struct PaywallView: View {
         }
     }
 
-    private func footer(_ model: PaywallViewModel) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            purchaseButton(model)
-            HStack(spacing: AppSpacing.lg) {
-                restoreButton(model)
-                if model.showsManageSubscription {
-                    Button("Manage Subscription") {
-                        Task { await model.manageSubscription() }
-                    }
-                    .font(AppTypography.captionBold)
-                    .foregroundStyle(AppColors.accent)
-                    .frame(minHeight: AppSpacing.touch)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.page)
-        .padding(.top, AppSpacing.sm)
-        .padding(.bottom, AppSpacing.md)
-        .background(
-            LinearGradient(
-                colors: [AppColors.background.opacity(0), AppColors.background, AppColors.background],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-        )
+    private func close() {
+        dismiss()
     }
 
-    @ViewBuilder
-    private func purchaseButton(_ model: PaywallViewModel) -> some View {
-        let busy = model.phase == .purchasing || model.phase == .loading || model.phase == .restoring
-        if model.phase == .loading && model.plans.isEmpty {
-            EmptyView()
-        } else if model.plans.isEmpty {
-            Button {
-                Task { await model.load() }
-            } label: {
-                PrimaryButtonLabel(title: "Try Again")
-            }
-            .buttonStyle(PressScaleStyle())
-            .disabled(model.phase == .loading)
+    private func select(_ kind: LumenPlanKind, model: PaywallViewModel) {
+        Haptics.selection()
+        if reduceMotion {
+            model.select(kind)
         } else {
-            Button {
-                Task { await model.purchaseSelected() }
-            } label: {
-                PrimaryButtonLabel(
-                    title: purchaseTitle(model),
-                    systemImage: busy ? nil : "sparkles"
-                )
-            }
-            .buttonStyle(PressScaleStyle())
-            .disabled(busy || model.selectedPlan == nil)
-            .overlay {
-                if model.phase == .purchasing {
-                    ProgressView()
-                        .tint(AppColors.onAccent)
-                }
+            withAnimation(AppAnimation.quick) {
+                model.select(kind)
             }
         }
     }
 
-    private func purchaseTitle(_ model: PaywallViewModel) -> String {
-        switch model.phase {
-        case .purchasing, .restoring, .loading:
-            "Please wait"
-        default:
-            if let name = model.selectedPlan?.kind.title {
-                "Continue with \(name)"
+    private func performPrimary(_ model: PaywallViewModel) {
+        Task {
+            if model.plans.isEmpty {
+                await model.load()
             } else {
-                "Continue"
+                await model.purchaseSelected()
             }
         }
     }
 
-    private func restoreButton(_ model: PaywallViewModel) -> some View {
-        Button("Restore Purchases") {
-            Task { await model.restore() }
-        }
-        .font(AppTypography.captionBold)
-        .foregroundStyle(AppColors.textSecondary)
-        .frame(minHeight: AppSpacing.touch)
-        .disabled(model.phase == .purchasing || model.phase == .restoring)
+    private func restore(_ model: PaywallViewModel) {
+        Task { await model.restore() }
     }
 
-    private var legal: some View {
-        HStack(spacing: AppSpacing.lg) {
-            legalLink("Terms of Use", url: LegalConfiguration.termsURL, document: .terms)
-            legalLink("Privacy Policy", url: LegalConfiguration.privacyURL, document: .privacy)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    private func manage(_ model: PaywallViewModel) {
+        Task { await model.manageSubscription() }
     }
 
-    @ViewBuilder
-    private func legalLink(_ title: String, url: URL?, document: LegalDocument) -> some View {
-        if let url {
-            Button(title) { openURL(url) }
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.textSecondary)
-        } else {
-            NavigationLink(title) {
-                LegalView(document: document)
-            }
-            .font(AppTypography.caption)
-            .foregroundStyle(AppColors.textSecondary)
+    private func prepare() async {
+        if model == nil {
+            model = PaywallViewModel(store: env.store, entitlements: env.entitlements)
         }
-    }
-}
-
-private struct BenefitLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            configuration.icon
-                .font(.caption.weight(.bold))
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 22, height: 22)
-                .background(AppColors.accent.opacity(0.16), in: Circle())
-            configuration.title
+        guard let model else { return }
+        if model.phase == .loading || model.plans.isEmpty {
+            await model.load()
         }
     }
 }
@@ -386,3 +245,49 @@ struct PremiumView: View {
         PaywallView(embedded: true)
     }
 }
+
+#if DEBUG
+#Preview("Dark · Annual") {
+    PaywallView(model: .layoutPreview(selected: .annual))
+        .environment(AppEnvironment.preview)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Light · Monthly") {
+    PaywallView(model: .layoutPreview(selected: .monthly))
+        .environment(AppEnvironment.preview)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Lifetime · Light") {
+    PaywallView(model: .layoutPreview(selected: .lifetime))
+        .environment(AppEnvironment.preview)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Long prices") {
+    PaywallView(model: .layoutPreview(
+        selected: .annual,
+        prices: ("24,99 US$", "1.249.000 ₫", "¥12,800")
+    ))
+    .environment(AppEnvironment.preview)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Narrow") {
+    PaywallView(model: .layoutPreview(
+        selected: .annual,
+        prices: ("24,99 US$", "1.249.000 ₫", "¥12,800")
+    ))
+    .environment(AppEnvironment.preview)
+    .frame(width: 320, height: 700)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Large text") {
+    PaywallView(model: .layoutPreview(selected: .annual))
+        .environment(AppEnvironment.preview)
+        .environment(\.dynamicTypeSize, .accessibility2)
+        .preferredColorScheme(.light)
+}
+#endif
