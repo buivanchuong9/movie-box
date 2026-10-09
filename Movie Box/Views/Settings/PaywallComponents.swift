@@ -9,8 +9,8 @@ enum PaywallColors {
     static var accentText: Color { AppColors.accent }
     static var ctaFill: Color { AppColors.accentFill }
     static let markGlyph = AppColors.dynamic(
-        light: UIColor(red: 0.985, green: 0.965, blue: 0.930, alpha: 1),
-        dark: UIColor(red: 0.102, green: 0.067, blue: 0.024, alpha: 1)
+        light: UIColor(red: 0.969, green: 0.980, blue: 1.000, alpha: 1),
+        dark: UIColor(red: 0.031, green: 0.063, blue: 0.141, alpha: 1)
     )
     static var selectedSurface: Color { AppColors.selectedBackground }
     static var accentSoft: Color { AppColors.accentSoft }
