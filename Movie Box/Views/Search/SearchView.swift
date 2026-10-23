@@ -177,9 +177,6 @@ struct SearchView: View {
     private var results: some View {
         ScrollView {
             LazyVStack(spacing: AppSpacing.sm) {
-                if !env.network.isOnline {
-                    OfflineView()
-                }
                 ForEach(env.searchModel.hits) { hit in
                     switch hit {
                     case .media(let media):

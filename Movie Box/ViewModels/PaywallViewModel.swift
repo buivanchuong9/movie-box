@@ -173,15 +173,7 @@ final class PaywallViewModel {
             let kind = LumenProductID.kind(for: product.id) ?? .monthly
             let suffix = PlanPricing.periodSuffix(for: product)
             let priceLine = suffix.map { "\(product.displayPrice) / \($0)" } ?? product.displayPrice
-            let billingNote: String
-            switch kind {
-            case .monthly:
-                billingNote = "Billed monthly"
-            case .annual:
-                billingNote = "Billed yearly"
-            case .lifetime:
-                billingNote = "One-time purchase"
-            }
+            let billingNote = PlanPricing.renewalNote(for: product)
             let savingsText = kind == .annual ? savings.map { "Save \($0)%" } : nil
             return PaywallPlan(
                 id: product.id,

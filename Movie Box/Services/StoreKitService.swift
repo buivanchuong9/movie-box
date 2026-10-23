@@ -252,6 +252,45 @@ enum PlanPricing {
         return value
     }
 
+    /// Equivalent monthly price for a yearly plan, formatted with the product's own currency format.
+    static func perMonthPrice(for product: Product) -> String? {
+        guard let period = product.subscription?.subscriptionPeriod,
+              period.unit == .year, period.value == 1, product.price > 0
+        else { return nil }
+        return (product.price / 12).formatted(product.priceFormatStyle)
+    }
+
+    /// Renewal wording derived from the product's real period; includes a trial only if StoreKit reports one.
+    static func renewalNote(for product: Product) -> String {
+        guard let subscription = product.subscription else { return "One-time purchase. Does not renew." }
+        var note: String
+        if let suffix = periodSuffix(for: product) {
+            note = "Renews every \(suffix) until canceled"
+        } else {
+            note = "Renews automatically until canceled"
+        }
+        if let offer = subscription.introductoryOffer, offer.paymentMode == .freeTrial,
+           let trial = periodText(offer.period) {
+            note = "\(trial) free trial, then \(product.displayPrice) per \(periodSuffix(for: product) ?? "period"). Renews until canceled"
+        }
+        if let perMonth = perMonthPrice(for: product) {
+            note += " · about \(perMonth) per month"
+        }
+        return note
+    }
+
+    private static func periodText(_ period: Product.SubscriptionPeriod) -> String? {
+        let unit: String
+        switch period.unit {
+        case .day: unit = "day"
+        case .week: unit = "week"
+        case .month: unit = "month"
+        case .year: unit = "year"
+        @unknown default: return nil
+        }
+        return "\(period.value)-\(unit)"
+    }
+
     static func periodSuffix(for product: Product) -> String? {
         guard let period = product.subscription?.subscriptionPeriod else { return nil }
         let count = period.value

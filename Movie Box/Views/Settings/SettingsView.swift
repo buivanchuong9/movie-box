@@ -7,9 +7,6 @@ struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.openURL) private var openURL
     #if DEBUG
-    @State private var apiKey = ""
-    @State private var token = ""
-    @State private var keyMessage: String?
     #endif
     @State private var notifyMessage: String?
     @State private var restoreMessage: String?
@@ -94,24 +91,6 @@ struct SettingsView: View {
                 Button("Rate Movie Box") { rateApp() }
                     .listRowBackground(AppColors.surface)
             }
-
-            #if DEBUG
-            Section {
-                SecureField("TMDB API key", text: $apiKey)
-                SecureField("Read access token", text: $token)
-                Button("Save configuration") { saveCredentials() }
-                if let keyMessage {
-                    Text(keyMessage)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.textSecondary)
-                }
-            } header: {
-                Text("Developer configuration")
-            } footer: {
-                Text("Debug builds only. The credential stays in the Keychain and is not shown again after you leave this screen.")
-            }
-            .listRowBackground(AppColors.surface)
-            #endif
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
@@ -120,12 +99,6 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppColors.accent)
-        #if DEBUG
-        .onAppear {
-            apiKey = ""
-            token = ""
-        }
-        #endif
     }
 
     @ViewBuilder
@@ -149,7 +122,7 @@ struct SettingsView: View {
     private var languageBinding: Binding<String> {
         Binding(
             get: { env.library.preferences.contentLanguage },
-            set: { env.library.setLanguage($0); env.applyLanguage() }
+            set: { env.library.setLanguage($0) }
         )
     }
 
@@ -163,21 +136,6 @@ struct SettingsView: View {
             }
         )
     }
-
-    #if DEBUG
-    private func saveCredentials() {
-        do {
-            try KeychainStore.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines), account: APIConfiguration.keyAccount)
-            try KeychainStore.save(token.trimmingCharacters(in: .whitespacesAndNewlines), account: APIConfiguration.tokenAccount)
-            apiKey = ""
-            token = ""
-            keyMessage = APIConfiguration.current().isConfigured ? "Saved in the Keychain." : "Cleared."
-            Task { await env.home.reload(signals: env.library.signals(isPremium: env.entitlements.isPremium)) }
-        } catch {
-            keyMessage = "The configuration could not be saved."
-        }
-    }
-    #endif
 
     private func restorePurchases() async -> String {
         switch await env.store.restore() {
@@ -310,17 +268,15 @@ struct LegalView: View {
         switch document {
         case .privacy:
             """
-            Lumen stores your watchlist, favorites, watched titles, episode progress, recent searches, and genre preferences on this device with SwiftData. A metadata credential configured for this build stays in the Keychain and is not shown in the app.
+            Lumen stores your watchlist, favorites, watched titles, episode progress, recent searches, and genre preferences on this device with SwiftData. Videos you import are copied into the app's own storage on this device and play offline.
 
-            Lumen does not run its own account system. Movie and television text, ratings, and artwork are requested from a third-party metadata service when you are online. Images are cached on device so recently opened titles remain available later.
+            Lumen does not run its own account system. Lumen makes no network requests to load movie information and uploads none of your videos or data.
 
             Lumen Plus purchases are processed by Apple. Lumen does not sell personal information. The occasional Lumen Plus placement is our own message, not a third-party tracker.
             """
         case .terms:
             """
-            Lumen is a discovery app. It does not host, stream, or download movies or television episodes. Trailers open from the official link supplied by the metadata service when one is listed.
-
-            Ratings and reviews shown in Lumen come from that metadata service. Lumen does not invent scores, votes, or review text. The Worth Watching percentage is the published audience average expressed out of 100, and it stays hidden until enough votes exist.
+            Lumen is a discovery app. It does not host, stream, or download movies or television episodes. Videos play from files you import into the app.
 
             Your lists can be removed by deleting the app. Subscriptions, if offered, are billed by Apple and can be managed in your Apple ID settings.
             """
@@ -330,7 +286,7 @@ struct LegalView: View {
 
             Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
 
-            This product uses the TMDB API but is not endorsed or certified by TMDB. Artwork and metadata remain the property of their respective owners.
+            Videos and images you import stay on this device. You are responsible for having the right to use them.
             """
         }
     }

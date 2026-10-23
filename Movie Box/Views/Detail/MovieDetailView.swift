@@ -3,11 +3,11 @@ import SwiftUI
 struct MovieDetailView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
     @Environment(\.zoomNamespace) private var zoomNamespace
     let movieID: Int
     @State private var model: MovieDetailViewModel?
     @State private var shareText: SharePayload?
+    @State private var playingURL: URL?
 
     var body: some View {
         Group {
@@ -48,9 +48,6 @@ struct MovieDetailView: View {
         } else if let movie = model.detail {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    if !env.network.isOnline {
-                        OfflineView()
-                    }
                     backdrop(movie)
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         section("Overview") {
@@ -70,8 +67,8 @@ struct MovieDetailView: View {
                         if let credits = model.credits, !credits.directors.isEmpty || !credits.writers.isEmpty {
                             crewBlock(credits)
                         }
-                        if model.trailer != nil {
-                            trailerBlock(model.trailer, backdrop: movie.backdropPath, seed: movie.id)
+                        if let videoURL = env.imports.videoURL(id: movie.id) {
+                            playerBlock(movie, url: videoURL)
                         }
                         reviewsBlock(model)
                         if !model.similar.isEmpty {
@@ -88,6 +85,9 @@ struct MovieDetailView: View {
             .ignoresSafeArea(edges: .top)
             .overlay(alignment: .top) { topBar(movie) }
             .sheet(item: $shareText) { ShareSheet(items: [$0.text]) }
+            .fullScreenCover(item: $playingURL) { url in
+                LocalVideoPlayer(url: url) { playingURL = nil }
+            }
         }
     }
 
@@ -236,32 +236,30 @@ struct MovieDetailView: View {
     }
 
     @ViewBuilder
-    private func trailerBlock(_ trailer: MediaVideo?, backdrop: String?, seed: Int) -> some View {
-        section("Trailer") {
-            if let trailer, let url = trailer.youtubeURL {
-                Button {
-                    openURL(url)
-                } label: {
-                    ZStack {
-                        CachedAsyncImage(
-                            url: ImageService().url(path: backdrop, size: .backdrop),
-                            maxPixel: 900,
-                            seed: seed,
-                            accessibilityLabel: trailer.name
-                        )
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 52))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 8)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+    private func playerBlock(_ movie: MovieDetail, url: URL) -> some View {
+        section("Play") {
+            Button {
+                playingURL = url
+            } label: {
+                ZStack {
+                    CachedAsyncImage(
+                        url: ImageService().url(path: movie.backdropPath ?? movie.posterPath, size: .backdrop),
+                        maxPixel: 900,
+                        seed: movie.id,
+                        accessibilityLabel: movie.title
+                    )
+                    .frame(height: 180)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 52))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 8)
                 }
-                .buttonStyle(PressScaleStyle())
-                .accessibilityLabel("Play \(trailer.name)")
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
             }
+            .buttonStyle(PressScaleStyle())
+            .accessibilityLabel("Play \(movie.title)")
         }
     }
 

@@ -1,0 +1,4 @@
+// Project base configuration. Optional local secrets load first; the committed public legal URLs load last
+// so a local file can never override them with an empty or different value.
+#include? "Secrets.xcconfig"
+#include "Legal.xcconfig"

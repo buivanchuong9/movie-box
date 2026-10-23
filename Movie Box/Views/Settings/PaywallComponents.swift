@@ -301,6 +301,11 @@ private struct PaywallPlanRow: View {
                     .foregroundStyle(AppColors.textPrimary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                Text(plan.billingNote)
+                    .font(AppTypography.footnote)
+                    .foregroundStyle(secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -439,7 +444,7 @@ private struct PaywallPlanRow: View {
     }
 
     private var accessibilityDescription: String {
-        var parts = [presentedName, plan.displayPrice, spokenPeriod]
+        var parts = [presentedName, plan.displayPrice, spokenPeriod, plan.billingNote]
         if let recommendation {
             parts.append(recommendation)
         }
@@ -543,58 +548,90 @@ struct PaywallActionBar: View {
 }
 
 struct PaywallLegal: View {
-    @Environment(\.openURL) private var openURL
+    /// Compact mode is used in the pinned action bar beside the purchase button.
+    var compact = false
+
     @Environment(\.colorSchemeContrast) private var contrast
 
     private let disclosure = "Monthly and Annual renew automatically until you cancel in your Apple ID settings at least 24 hours before the period ends. Lifetime is a one-time purchase and does not renew. Payment is charged to your Apple ID."
+    private let compactDisclosure = "Subscriptions renew automatically until canceled at least 24 hours before the period ends. Lifetime is a one-time purchase."
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(disclosure)
-                .font(.subheadline)
+        VStack(alignment: compact ? .center : .leading, spacing: compact ? AppSpacing.xxs : AppSpacing.sm) {
+            Text(compact ? compactDisclosure : disclosure)
+                .font(compact ? AppTypography.footnote : .subheadline)
                 .foregroundStyle(secondary)
-                .lineSpacing(3)
+                .lineSpacing(compact ? 1 : 3)
+                .multilineTextAlignment(compact ? .center : .leading)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
 
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: AppSpacing.lg) {
-                    legalLink("Terms of Use", url: LegalConfiguration.termsURL, document: .terms)
-                    legalLink("Privacy Policy", url: LegalConfiguration.privacyURL, document: .privacy)
+                    PaywallLegalLink(title: "Terms of Use", document: .terms)
+                    PaywallLegalLink(title: "Privacy Policy", document: .privacy)
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    legalLink("Terms of Use", url: LegalConfiguration.termsURL, document: .terms)
-                    legalLink("Privacy Policy", url: LegalConfiguration.privacyURL, document: .privacy)
+                VStack(alignment: compact ? .center : .leading, spacing: 0) {
+                    PaywallLegalLink(title: "Terms of Use", document: .terms)
+                    PaywallLegalLink(title: "Privacy Policy", document: .privacy)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
         }
     }
 
     private var secondary: Color {
         contrast == .increased ? AppColors.textPrimary : AppColors.textSecondary
     }
+}
 
-    @ViewBuilder
-    private func legalLink(_ title: String, url: URL?, document: LegalDocument) -> some View {
+/// Opens the configured HTTPS page; falls back to the in-app text when no URL is configured, and reports failures.
+struct PaywallLegalLink: View {
+    let title: LocalizedStringKey
+    let document: LegalDocument
+
+    @Environment(\.openURL) private var openURL
+    @State private var failed = false
+
+    private var url: URL? {
+        document == .terms ? LegalConfiguration.termsURL : LegalConfiguration.privacyURL
+    }
+
+    var body: some View {
         Group {
             if let url {
-                Button(title) { openURL(url) }
-                    .buttonStyle(.plain)
+                Button {
+                    openURL(url) { accepted in
+                        if !accepted { failed = true }
+                    }
+                } label: {
+                    label
+                }
             } else {
                 NavigationLink {
                     LegalView(document: document)
                 } label: {
-                    Text(title)
+                    label
                 }
-                .buttonStyle(.plain)
             }
         }
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(PaywallColors.accentText)
-        .underline()
-        .frame(minHeight: AppSpacing.touch, alignment: .leading)
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isLink)
         .accessibilityIdentifier(document == .terms ? "paywall.terms" : "paywall.privacy")
+        .alert("Couldn't open the page", isPresented: $failed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please check your connection and try again.")
+        }
+    }
+
+    private var label: some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(PaywallColors.accentText)
+            .underline()
+            .frame(minHeight: AppSpacing.touch)
+            .contentShape(Rectangle())
     }
 }
 

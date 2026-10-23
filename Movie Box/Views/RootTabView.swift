@@ -28,9 +28,6 @@ struct RootView: View {
         .sheet(isPresented: $showPremium) {
             NavigationStack { PremiumView() }
         }
-        .onChange(of: env.library.preferences.contentLanguage) { _, _ in
-            env.applyLanguage()
-        }
     }
 
     private var interstitialBinding: Binding<Bool> {

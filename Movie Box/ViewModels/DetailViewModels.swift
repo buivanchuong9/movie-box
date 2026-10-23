@@ -94,9 +94,7 @@ final class MovieDetailViewModel {
             return false
         } catch {
             if detail == nil {
-                errorMessage = (error as? AppError) == .offline || !env.network.isOnline
-                    ? "You're offline"
-                    : AppError.userMessage(for: error)
+                errorMessage = AppError.userMessage(for: error)
             }
             return true
         }

@@ -6,7 +6,6 @@ import SwiftData
 @MainActor
 @Observable
 final class AppEnvironment {
-    let client: APIClient
     let imports: ImportLibrary
     let movies: any MovieServiceProtocol
     let tv: any TVServiceProtocol
@@ -19,7 +18,6 @@ final class AppEnvironment {
     let library: LibraryRepository
     let entitlements: EntitlementManager
     let store: StoreKitService
-    let network: NetworkMonitor
     let ads: AdManager
     let tabs = TabRouter()
     let home: HomeViewModel
@@ -50,8 +48,6 @@ final class AppEnvironment {
         let configuration = try Self.storeConfiguration(inMemory: preview)
         container = try ModelContainer(for: schema, configurations: configuration)
         library = LibraryRepository(context: container.mainContext)
-        client = APIClient()
-        client.contentLanguage = library.preferences.contentLanguage
         let imported = ImportLibrary()
         imports = imported
         if preview {
@@ -71,9 +67,6 @@ final class AppEnvironment {
         entitlements = entitlementManager
         let storeKit = StoreKitService(entitlements: entitlementManager)
         store = storeKit
-        let monitor = NetworkMonitor()
-        network = monitor
-        monitor.start()
         ads = AdManager(entitlements: entitlementManager)
         home = HomeViewModel(movies: movies, television: tv, recommendations: recommendations)
         discover = DiscoverViewModel(movies: movies)
@@ -84,17 +77,12 @@ final class AppEnvironment {
     }
 
     @discardableResult
-    func importImages(_ images: [(title: String, data: Data)]) async -> Int {
-        var added = 0
-        for image in images {
-            if imports.add(title: image.title, imageData: image.data) {
-                added += 1
-            }
-        }
-        if added > 0 {
+    func importVideo(from url: URL, title: String, movesSource: Bool) async -> VideoImportResult {
+        let result = await imports.importVideo(from: url, title: title, movesSource: movesSource)
+        if result == .added {
             await refreshImportedContent()
         }
-        return added
+        return result
     }
 
     private func refreshImportedContent() async {
@@ -102,10 +90,6 @@ final class AppEnvironment {
         await home.reload(signals: signals)
         await discover.reload()
         await searchModel.reloadTrending()
-    }
-
-    func applyLanguage() {
-        client.contentLanguage = library.preferences.contentLanguage
     }
 
     private static func storeConfiguration(inMemory: Bool) throws -> ModelConfiguration {

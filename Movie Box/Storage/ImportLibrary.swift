@@ -1,7 +1,16 @@
+import AVFoundation
 import CryptoKit
 import Foundation
+import UIKit
 
-/// Movies the user added from the photo library or from image files. No network calls.
+enum VideoImportResult: Equatable {
+    case added
+    case duplicate
+    case failed
+}
+
+/// Videos the user added from Photos or Files. Each file is copied into the app's own storage and played offline.
+/// Nothing is uploaded and no network calls are made.
 @MainActor
 @Observable
 final class ImportLibrary {
@@ -23,37 +32,58 @@ final class ImportLibrary {
         load()
     }
 
-    @discardableResult
-    func add(title: String, imageData: Data) -> Bool {
-        guard let jpeg = PosterEncoding.jpeg(from: imageData) else { return false }
-        let digest = SHA256.hash(data: jpeg).map { String(format: "%02x", $0) }.joined()
-        if records.contains(where: { $0.digest == digest }) { return false }
+    /// Copies (or moves, for files already in the app's temporary storage) a video into the library.
+    /// Security-scoped URLs from the Files picker are opened for the duration of the copy.
+    func importVideo(from source: URL, title: String, movesSource: Bool) async -> VideoImportResult {
         let id = (records.map(\.id).max() ?? 0) + 1
-        let fileName = "\(id).jpg"
-        let url = directory.appendingPathComponent(fileName)
-        do {
-            try jpeg.write(to: url, options: .atomic)
-        } catch {
-            return false
+        let known = Set(records.compactMap(\.digest))
+        let directory = directory
+        let outcome = await Task.detached(priority: .userInitiated) {
+            VideoFileImporter.run(source: source, id: id, into: directory, known: known, movesSource: movesSource)
+        }.value
+        guard case .success(let item) = outcome else {
+            if case .duplicate = outcome { return .duplicate }
+            return .failed
         }
         let cleaned = title.trimmingCharacters(in: .whitespacesAndNewlines)
         records.insert(
-            Record(id: id, title: cleaned.isEmpty ? "Movie \(id)" : cleaned, fileName: fileName, createdAt: .now, digest: digest),
+            Record(
+                id: id,
+                title: cleaned.isEmpty ? "Video \(id)" : cleaned,
+                fileName: item.posterFileName,
+                videoFileName: item.videoFileName,
+                duration: item.duration,
+                createdAt: .now,
+                digest: item.digest
+            ),
             at: 0
         )
         persist()
         rebuild()
-        return true
+        return .added
     }
 
     func summary(id: Int) -> MediaSummary? {
         movies.first { $0.id == id }
     }
 
+    /// File URL of the imported video, or nil for titles without one or when the file is missing.
+    func videoURL(id: Int) -> URL? {
+        guard let name = records.first(where: { $0.id == id })?.videoFileName else { return nil }
+        let url = directory.appendingPathComponent(name)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    func runtimeMinutes(id: Int) -> Int {
+        Int(((records.first { $0.id == id }?.duration ?? 0) / 60).rounded())
+    }
+
     private struct Record: Codable {
         var id: Int
         var title: String
-        var fileName: String
+        var fileName: String?
+        var videoFileName: String?
+        var duration: Double?
         var createdAt: Date
         var digest: String?
     }
@@ -76,15 +106,20 @@ final class ImportLibrary {
 
     private func rebuild() {
         movies = records.compactMap { record in
-            let path = directory.appendingPathComponent(record.fileName).path
-            guard FileManager.default.fileExists(atPath: path) else { return nil }
+            let hasVideo = record.videoFileName.map {
+                FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path)
+            } ?? false
+            let posterPath = record.fileName
+                .map { directory.appendingPathComponent($0).path }
+                .flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil }
+            guard hasVideo || posterPath != nil else { return nil }
             let rank = records.firstIndex { $0.id == record.id } ?? 0
             return MediaSummary(
                 id: record.id,
                 title: record.title,
-                overview: "Imported from your photos.",
-                posterPath: path,
-                backdropPath: path,
+                overview: hasVideo ? "Imported video." : "Imported from your photos.",
+                posterPath: posterPath,
+                backdropPath: posterPath,
                 voteAverage: 0,
                 voteCount: 0,
                 releaseDate: nil,
@@ -95,6 +130,105 @@ final class ImportLibrary {
                 isAdult: false
             )
         }
+    }
+}
+
+/// Copy, verify and thumbnail work. Runs off the main actor.
+private enum VideoFileImporter {
+    struct Item {
+        let videoFileName: String
+        let posterFileName: String?
+        let duration: Double
+        let digest: String
+    }
+
+    enum Outcome {
+        case success(Item)
+        case duplicate
+        case failure
+    }
+
+    static func run(source: URL, id: Int, into directory: URL, known: Set<String>, movesSource: Bool) -> Outcome {
+        let scoped = source.startAccessingSecurityScopedResource()
+        defer { if scoped { source.stopAccessingSecurityScopedResource() } }
+
+        guard let digest = digest(of: source) else { return .failure }
+        if known.contains(digest) {
+            if movesSource { try? FileManager.default.removeItem(at: source) }
+            return .duplicate
+        }
+
+        let ext = source.pathExtension.isEmpty ? "mov" : source.pathExtension.lowercased()
+        let videoName = "\(id).\(ext)"
+        var destination = directory.appendingPathComponent(videoName)
+        try? FileManager.default.removeItem(at: destination)
+        do {
+            if movesSource {
+                try FileManager.default.moveItem(at: source, to: destination)
+            } else {
+                try FileManager.default.copyItem(at: source, to: destination)
+            }
+        } catch {
+            return .failure
+        }
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? destination.setResourceValues(values)
+
+        let asset = AVURLAsset(url: destination)
+        let probe = blocking { () -> (Bool, Double) in
+            let playable = (try? await asset.load(.isPlayable)) ?? false
+            let seconds = (try? await asset.load(.duration).seconds) ?? 0
+            return (playable, seconds.isFinite ? seconds : 0)
+        }
+        guard probe.0 else {
+            try? FileManager.default.removeItem(at: destination)
+            return .failure
+        }
+
+        var posterName: String?
+        if let jpeg = blocking({ await poster(for: asset, duration: probe.1) }) {
+            let name = "\(id).jpg"
+            if (try? jpeg.write(to: directory.appendingPathComponent(name), options: .atomic)) != nil {
+                posterName = name
+            }
+        }
+        return .success(Item(videoFileName: videoName, posterFileName: posterName, duration: probe.1, digest: digest))
+    }
+
+    private static func digest(of url: URL) -> String? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while let chunk = try? handle.read(upToCount: 1 << 20), !chunk.isEmpty {
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func poster(for asset: AVURLAsset, duration: Double) async -> Data? {
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 1280, height: 1280)
+        let time = CMTime(seconds: min(1, duration / 2), preferredTimescale: 600)
+        guard let image = try? await generator.image(at: time).image else { return nil }
+        return UIImage(cgImage: image).jpegData(compressionQuality: 0.82)
+    }
+
+    /// Bridges async AVFoundation calls into this synchronous, already-detached worker.
+    private static func blocking<T: Sendable>(_ work: @escaping @Sendable () async -> T) -> T {
+        let box = ResultBox<T>()
+        let semaphore = DispatchSemaphore(value: 0)
+        Task.detached {
+            box.value = await work()
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.value!
+    }
+
+    private final class ResultBox<T>: @unchecked Sendable {
+        var value: T?
     }
 }
 
@@ -117,6 +251,7 @@ final class LocalMovieService: MovieServiceProtocol {
 
     func details(id: Int) async throws -> MovieDetail {
         guard let item = await library.summary(id: id) else { throw AppError.notFound }
+        let minutes = await library.runtimeMinutes(id: id)
         return LocalDecode.value(MovieDetail.self, [
             "id": item.id,
             "title": item.title,
@@ -125,7 +260,7 @@ final class LocalMovieService: MovieServiceProtocol {
             "backdrop_path": item.backdropPath ?? "",
             "vote_average": 0,
             "vote_count": 0,
-            "runtime": 0,
+            "runtime": minutes,
             "genres": [] as [[String: Any]],
             "tagline": "",
             "status": "Imported",

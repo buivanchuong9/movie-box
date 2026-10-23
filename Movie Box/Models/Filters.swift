@@ -15,13 +15,6 @@ enum SortOption: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var tmdbValue: String {
-        switch self {
-        case .popularity: "popularity.desc"
-        case .rating: "vote_average.desc"
-        case .releaseDate: "primary_release_date.desc"
-        }
-    }
 }
 
 struct MediaFilters: Equatable, Hashable {

@@ -17,10 +17,6 @@ struct LibraryView: View {
             }
             .padding(.horizontal, AppSpacing.page)
 
-            if !env.network.isOnline {
-                OfflineView()
-            }
-
             CollectionPicker(segment: $segment)
                 .padding(.horizontal, AppSpacing.page)
 

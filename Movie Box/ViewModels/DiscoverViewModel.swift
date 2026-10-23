@@ -41,7 +41,6 @@ final class DiscoverViewModel {
     var isLoading = false
     var isLoadingMore = false
     var errorMessage: String?
-    var needsAPIKey = false
     private var page = 1
     private var totalPages = 1
     private var requestID = UUID()
@@ -58,9 +57,7 @@ final class DiscoverViewModel {
     }
 
     func reload() async {
-        await RequestCache.$bypassFreshness.withValue(true) {
-            await self.reloadNow()
-        }
+        await reloadNow()
     }
 
     private func reloadNow() async {
@@ -68,7 +65,6 @@ final class DiscoverViewModel {
         requestID = token
         isLoading = true
         errorMessage = nil
-        needsAPIKey = false
         page = 1
         do {
             let result = try await fetch(page: 1)
@@ -81,7 +77,6 @@ final class DiscoverViewModel {
         } catch {
             guard requestID == token else { return }
             items = []
-            needsAPIKey = (error as? AppError) == .missingAPIKey
             errorMessage = AppError.userMessage(for: error)
         }
         if requestID == token { isLoading = false }

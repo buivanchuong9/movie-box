@@ -46,6 +46,7 @@ struct PaywallView: View {
                                 .frame(height: 1)
                                 .accessibilityHidden(true)
                             actionBar(model)
+                            PaywallLegal(compact: true)
                         }
                         .padding(.top, AppSpacing.xs)
                         .padding(.bottom, AppSpacing.md)
@@ -84,7 +85,9 @@ struct PaywallView: View {
                 actionBar(model)
             }
 
-            PaywallLegal()
+            if !pinsActions || model.map(showsActions) != true {
+                PaywallLegal()
+            }
         }
     }
 

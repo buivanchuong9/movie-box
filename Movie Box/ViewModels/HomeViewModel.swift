@@ -21,7 +21,6 @@ final class HomeViewModel {
     var youMayAlsoLike: [MediaSummary] = []
     var isLoading = false
     var errorMessage: String?
-    var needsAPIKey = false
     private var hasLoaded = false
     private var recommendationTask: Task<Void, Never>?
 
@@ -50,15 +49,12 @@ final class HomeViewModel {
     }
 
     func reload(signals: RecommendationSignals) async {
-        await RequestCache.$bypassFreshness.withValue(true) {
-            await self.reloadNow(signals: signals)
-        }
+        await reloadNow(signals: signals)
     }
 
     private func reloadNow(signals: RecommendationSignals) async {
         if trending.isEmpty { isLoading = true }
         errorMessage = nil
-        needsAPIKey = false
 
         let results = await (
             outcome { try await self.movies.trending(page: 1) },
@@ -79,7 +75,6 @@ final class HomeViewModel {
 
         let failures = [results.0, results.1, results.2, results.3, results.4, results.5].compactMap(\.error)
         if !hasContent, let failure = failures.first {
-            needsAPIKey = (failure as? AppError) == .missingAPIKey
             errorMessage = AppError.userMessage(for: failure)
         } else if !failures.isEmpty && !hasContent {
             errorMessage = AppError.offline.localizedDescription

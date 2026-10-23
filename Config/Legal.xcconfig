@@ -1,0 +1,5 @@
+// Public (non-secret) legal page URLs. Committed on purpose so every machine and CI archive gets them.
+// xcconfig treats // as a comment, so the scheme separator is assembled.
+SLASH = /
+LUMEN_TERMS_URL = https:$(SLASH)$(SLASH)sites.google.com/view/movie-box-app-lumen/terms
+LUMEN_PRIVACY_URL = https:$(SLASH)$(SLASH)sites.google.com/view/movie-box-app-lumen/privacy

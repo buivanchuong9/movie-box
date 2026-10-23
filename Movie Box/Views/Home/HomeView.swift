@@ -87,25 +87,12 @@ struct HomeView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let message = env.home.errorMessage, !env.home.hasContent {
-            if !env.network.isOnline {
-                EmptyStateView(
-                    systemImage: "wifi.slash",
-                    title: "You're offline",
-                    message: "Saved lists are still available. Fresh movie data needs a connection.",
-                    actionTitle: "Try Again",
-                    action: { Task { await env.home.reload(signals: signals) } }
-                )
-            } else {
-                NetworkErrorView(message: message) {
-                    Task { await env.home.reload(signals: signals) }
-                }
+            NetworkErrorView(message: message) {
+                Task { await env.home.reload(signals: signals) }
             }
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    if !env.network.isOnline {
-                        OfflineView()
-                    }
                     librarySummary
                     CinematicHero(items: env.home.heroItems)
                     if !env.home.popular.isEmpty {

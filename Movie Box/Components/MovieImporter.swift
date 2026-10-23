@@ -3,12 +3,19 @@ import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct PickedPhoto: Transferable {
-    let data: Data
+/// A video from the Photos picker, handed over as a file inside the app's temporary directory.
+struct PickedVideo: Transferable {
+    let url: URL
 
     static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(importedContentType: .image) { data in
-            PickedPhoto(data: data)
+        FileRepresentation(contentType: .movie) { video in
+            SentTransferredFile(video.url)
+        } importing: { received in
+            let ext = received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension
+            let copy = FileManager.default.temporaryDirectory
+                .appendingPathComponent("import-\(UUID().uuidString).\(ext)")
+            try FileManager.default.copyItem(at: received.file, to: copy)
+            return PickedVideo(url: copy)
         }
     }
 }
@@ -28,16 +35,16 @@ struct MovieImporter: ViewModifier {
                 Button("Files") { showFiles = true }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Choose posters from your photo library or from image files.")
+                Text("Choose videos from your photo library or from the Files app. They are copied into the app and play offline.")
             }
-            .photosPicker(isPresented: $showPhotos, selection: $photos, maxSelectionCount: 40, matching: .images)
+            .photosPicker(isPresented: $showPhotos, selection: $photos, maxSelectionCount: 40, matching: .videos)
             .onChange(of: photos) { _, items in
                 guard !items.isEmpty else { return }
                 let batch = items
                 photos = []
                 Task { await importPhotos(batch) }
             }
-            .fileImporter(isPresented: $showFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+            .fileImporter(isPresented: $showFiles, allowedContentTypes: [.movie], allowsMultipleSelection: true) { result in
                 Task { await importFiles(result) }
             }
             .alert("Import", isPresented: noticePresented) {
@@ -63,34 +70,36 @@ extension View {
 
 private extension MovieImporter {
     func importPhotos(_ items: [PhotosPickerItem]) async {
-        var next = env.imports.movies.count + 1
-        var images: [(title: String, data: Data)] = []
+        var outcomes: [VideoImportResult] = []
         for item in items {
-            guard let photo = try? await item.loadTransferable(type: PickedPhoto.self),
-                  let prepared = await PosterEncoding.prepared(photo.data) else { continue }
-            images.append((title: "Movie \(next)", data: prepared))
-            next += 1
+            guard let video = try? await item.loadTransferable(type: PickedVideo.self) else {
+                outcomes.append(.failed)
+                continue
+            }
+            let title = "Video \(env.imports.movies.count + 1)"
+            outcomes.append(await env.importVideo(from: video.url, title: title, movesSource: true))
+            try? FileManager.default.removeItem(at: video.url)
         }
-        await finishImport(images, attempted: !items.isEmpty)
+        report(outcomes)
     }
 
     func importFiles(_ result: Result<[URL], Error>) async {
-        guard case .success(let urls) = result else { return }
-        var images: [(title: String, data: Data)] = []
-        for url in urls {
-            guard let prepared = await PosterEncoding.preparedFile(url) else { continue }
-            images.append((title: url.deletingPathExtension().lastPathComponent, data: prepared))
+        guard case .success(let urls) = result else {
+            if case .failure = result { notice = "Those files couldn't be imported." }
+            return
         }
-        await finishImport(images, attempted: !urls.isEmpty)
+        var outcomes: [VideoImportResult] = []
+        for url in urls {
+            let title = url.deletingPathExtension().lastPathComponent
+            outcomes.append(await env.importVideo(from: url, title: title, movesSource: false))
+        }
+        report(outcomes)
     }
 
-    func finishImport(_ images: [(title: String, data: Data)], attempted: Bool) async {
-        guard attempted else { return }
-        let added = await env.importImages(images)
-        if added == 0 {
-            notice = images.isEmpty
-                ? "Those files couldn't be imported."
-                : "Those posters are already in your library."
-        }
+    func report(_ outcomes: [VideoImportResult]) {
+        guard !outcomes.isEmpty, !outcomes.contains(.added) else { return }
+        notice = outcomes.contains(.failed)
+            ? "Those videos couldn't be imported. Choose a video file that this device can play."
+            : "Those videos are already in your library."
     }
 }

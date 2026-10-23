@@ -39,26 +39,8 @@ struct DiscoverView: View {
                 if env.discover.isLoading && env.discover.items.isEmpty {
                     GridSkeleton()
                 } else if let message = env.discover.errorMessage, env.discover.items.isEmpty {
-                    if env.discover.needsAPIKey {
-                        EmptyStateView(
-                            systemImage: "film",
-                            title: "Movie data is unavailable",
-                            message: "Movie data is unavailable right now.",
-                            actionTitle: "Try Again",
-                            action: { Task { await env.discover.reload() } }
-                        )
-                    } else if !env.network.isOnline {
-                        EmptyStateView(
-                            systemImage: "wifi.slash",
-                            title: "You're offline",
-                            message: "This list isn't saved on this device yet.",
-                            actionTitle: "Try Again",
-                            action: { Task { await env.discover.reload() } }
-                        )
-                    } else {
-                        NetworkErrorView(message: message) {
-                            Task { await env.discover.reload() }
-                        }
+                    NetworkErrorView(message: message) {
+                        Task { await env.discover.reload() }
                     }
                 } else if env.discover.items.isEmpty {
                     discoverEmpty
@@ -72,11 +54,6 @@ struct DiscoverView: View {
         }
         .background(AppColors.background)
         .toolbar(.hidden, for: .navigationBar)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !env.network.isOnline, !env.discover.items.isEmpty {
-                OfflineView()
-            }
-        }
         .refreshable { await env.discover.reload() }
         .movieImporter(isPresented: $showImporter)
         .task { await env.discover.loadIfNeeded() }

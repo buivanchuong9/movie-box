@@ -20,12 +20,8 @@ struct ImageService: ImageServiceProtocol {
         if path.hasPrefix("file://"), let fileURL = URL(string: path), fileURL.isFileURL {
             return fileURL
         }
-        // Imported posters are absolute paths (`/Users/.../1.jpg`). TMDB paths are a single segment (`/poster.jpg`).
-        if path.hasPrefix("/"), path.filter({ $0 == "/" }).count > 1 {
-            return URL(fileURLWithPath: path)
-        }
-        let normalized = path.hasPrefix("/") ? path : "/\(path)"
-        return URL(string: APIConfiguration.imageBaseURL.absoluteString + "/" + size.rawValue + normalized)
+        // Imported posters are absolute paths inside the app's own storage.
+        return path.hasPrefix("/") ? URL(fileURLWithPath: path) : nil
     }
 }
 

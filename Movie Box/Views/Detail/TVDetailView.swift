@@ -32,9 +32,6 @@ struct TVDetailView: View {
         } else if let show = model.detail {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    if !env.network.isOnline {
-                        OfflineView()
-                    }
                     header(show)
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text(show.overview.isEmpty ? "No overview has been published." : show.overview)
